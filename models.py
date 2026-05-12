@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -21,5 +23,5 @@ class AgentEvent(BaseModel):
     type: str
     agent: str
     message: str
-    payload: dict = {}
+    payload: dict[str, Any] = {}
     timestamp: datetime
