@@ -43,16 +43,26 @@ async def _login(page: Page) -> None:
         raise RuntimeError("LinkedIn login failed")
 
 
-async def _scroll_until_n_posts(page: Page, num_posts: int) -> None:
+async def _scroll_until_n_posts(page: Page, num_posts: int, max_stale: int = 5) -> None:
+    prev_count = -1
+    stale_attempts = 0
     while True:
         posts = await page.query_selector_all(POST_SELECTOR)
-        if len(posts) >= num_posts:
+        count = len(posts)
+        if count >= num_posts:
             break
+        if count == prev_count:
+            stale_attempts += 1
+            if stale_attempts >= max_stale:
+                break  # LinkedIn gave us all it will
+        else:
+            stale_attempts = 0
+        prev_count = count
         await push({
             "type": "scraper_scrolling",
             "agent": "scraper",
-            "message": f"Loaded {len(posts)}/{num_posts} posts, scrolling...",
-            "payload": {"loaded": len(posts), "target": num_posts},
+            "message": f"Loaded {count}/{num_posts} posts, scrolling...",
+            "payload": {"loaded": count, "target": num_posts},
             "timestamp": datetime.now(timezone.utc).isoformat(),
         })
         await page.evaluate("window.scrollBy(0, 800)")
