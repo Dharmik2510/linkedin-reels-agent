@@ -104,3 +104,44 @@ async def test_run_continues_after_partial_failure():
     complete = next(e for e in emitted if e["type"] == "orchestrator_complete")
     assert complete["payload"]["scripts_generated"] == 2
     assert complete["payload"]["errors"] == 1
+
+
+async def test_run_emits_error_event_when_scraper_fails():
+    emitted: list[dict] = []
+
+    async def capture(event: dict) -> None:
+        emitted.append(event)
+
+    async def fail(*_):
+        raise RuntimeError("LinkedIn login failed")
+
+    with (
+        patch("orchestrator.push", capture),
+        patch("orchestrator.scraper.run", fail),
+    ):
+        import orchestrator
+        await orchestrator.run(3)  # must not raise
+
+    types = [e["type"] for e in emitted]
+    assert "orchestrator_start" in types
+    assert "error" in types
+    assert "orchestrator_complete" not in types
+
+
+async def test_run_counts_raised_exceptions_as_errors():
+    emitted: list[dict] = []
+
+    async def capture(event: dict) -> None:
+        emitted.append(event)
+
+    with (
+        patch("orchestrator.push", capture),
+        patch("orchestrator.scraper.run", AsyncMock(return_value=SAMPLE_POSTS)),
+        patch("orchestrator.content.run", AsyncMock(side_effect=RuntimeError("unexpected"))),
+    ):
+        import orchestrator
+        await orchestrator.run(3)
+
+    complete = next(e for e in emitted if e["type"] == "orchestrator_complete")
+    assert complete["payload"]["errors"] == 3
+    assert complete["payload"]["scripts_generated"] == 0

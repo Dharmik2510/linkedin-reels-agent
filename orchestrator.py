@@ -14,7 +14,17 @@ async def run(num_posts: int) -> None:
         "timestamp": datetime.now(timezone.utc).isoformat(),
     })
 
-    posts = await scraper.run(num_posts)
+    try:
+        posts = await scraper.run(num_posts)
+    except Exception as exc:
+        await push({
+            "type": "error",
+            "agent": "orchestrator",
+            "message": f"Scraper failed: {exc}",
+            "payload": {},
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+        return
 
     semaphore = asyncio.Semaphore(3)
 
