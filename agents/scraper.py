@@ -136,6 +136,7 @@ async def run(num_posts: int) -> list[Post]:
         finally:
             await browser.close()
 
+    # Only reached on clean exit (login failure raises before this point)
     await push({
         "type": "scraper_done",
         "agent": "scraper",
