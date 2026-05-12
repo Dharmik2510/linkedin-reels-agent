@@ -54,6 +54,11 @@ async def test_run_returns_reels_script():
 
     assert isinstance(result, ReelsScript)
     assert result.hook == "AI changed everything I knew"
+    call_args = mock_client.messages.create.call_args
+    assert call_args.kwargs["model"] == "claude-sonnet-4-6"
+    assert call_args.kwargs["max_tokens"] == 1024
+    system = call_args.kwargs["system"]
+    assert system[0]["cache_control"] == {"type": "ephemeral"}
 
 
 async def test_run_handles_fenced_json_from_api():
@@ -122,3 +127,6 @@ async def test_run_emits_error_event_on_failure():
         events.append(event_bus.get_nowait())
 
     assert any(e["type"] == "content_error" for e in events)
+    error_event = next(e for e in events if e["type"] == "content_error")
+    assert "boom" in error_event["message"]
+    assert error_event["payload"]["post_index"] == 0

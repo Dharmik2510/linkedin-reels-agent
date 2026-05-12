@@ -73,7 +73,7 @@ async def run(post: Post, post_index: int) -> ReelsScript | None:
             "type": "content_error",
             "agent": "content",
             "message": f"Failed to generate script for post {post_index + 1}: {exc}",
-            "payload": {"post_index": post_index},
+            "payload": {"post_index": post_index, "post_url": post.post_url},
             "timestamp": datetime.now(timezone.utc).isoformat(),
         })
         return None
