@@ -20,7 +20,8 @@ def test_index_returns_html():
 def test_run_returns_started_status():
     from main import app
     client = TestClient(app)
-    with patch("main.orchestrator.run", new_callable=AsyncMock):
+    mock_run = AsyncMock()
+    with patch("main.orchestrator.run", mock_run):
         response = client.post("/run", json={"num_posts": 3})
     assert response.status_code == 200
     data = response.json()
@@ -41,4 +42,32 @@ def test_run_rejects_invalid_body():
     from main import app
     client = TestClient(app)
     response = client.post("/run", json={"num_posts": "not-a-number"})
+    assert response.status_code == 422
+
+
+def test_run_returns_409_when_already_running():
+    import main as main_module
+    main_module._pipeline_running = True  # simulate running state
+    try:
+        from main import app
+        client = TestClient(app)
+        with patch("main.orchestrator.run", new_callable=AsyncMock):
+            response = client.post("/run", json={"num_posts": 3})
+        assert response.status_code == 409
+        assert response.json()["status"] == "already_running"
+    finally:
+        main_module._pipeline_running = False  # reset
+
+
+def test_run_rejects_zero_num_posts():
+    from main import app
+    client = TestClient(app)
+    response = client.post("/run", json={"num_posts": 0})
+    assert response.status_code == 422
+
+
+def test_run_rejects_over_100_num_posts():
+    from main import app
+    client = TestClient(app)
+    response = client.post("/run", json={"num_posts": 101})
     assert response.status_code == 422

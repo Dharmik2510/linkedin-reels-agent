@@ -5,7 +5,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
 import config  # noqa: F401 — validates env vars at import time
@@ -14,12 +14,15 @@ import orchestrator
 
 app = FastAPI(title="LinkedIn Reels Agent")
 
-DASHBOARD = Path(__file__).parent / "dashboard" / "index.html"
+_pipeline_running: bool = False
+
+_DASHBOARD_PATH = Path(__file__).parent / "dashboard" / "index.html"
+DASHBOARD_HTML: str = _DASHBOARD_PATH.read_text()
 
 
 @app.get("/")
 async def index() -> HTMLResponse:
-    return HTMLResponse(DASHBOARD.read_text())
+    return HTMLResponse(DASHBOARD_HTML)
 
 
 @app.get("/stream")
@@ -32,18 +35,30 @@ async def stream() -> EventSourceResponse:
             except asyncio.TimeoutError:
                 yield {"comment": "ping"}
 
-    return EventSourceResponse(generator())
+    return EventSourceResponse(generator(), ping=0)
 
 
 class RunRequest(BaseModel):
-    num_posts: int = 5
+    num_posts: int = Field(default=5, ge=1, le=100)
 
 
 @app.post("/run")
 async def run_pipeline(
     request: RunRequest, background_tasks: BackgroundTasks
 ) -> JSONResponse:
-    background_tasks.add_task(orchestrator.run, request.num_posts)
+    global _pipeline_running
+    if _pipeline_running:
+        return JSONResponse({"status": "already_running"}, status_code=409)
+    _pipeline_running = True
+
+    async def run_and_reset():
+        try:
+            await orchestrator.run(request.num_posts)
+        finally:
+            global _pipeline_running
+            _pipeline_running = False
+
+    background_tasks.add_task(run_and_reset)
     return JSONResponse({"status": "started", "num_posts": request.num_posts})
 
 
