@@ -177,6 +177,13 @@
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  function safeUrl(u) {
+    try {
+      const parsed = new URL(u);
+      return (parsed.protocol === 'https:' || parsed.protocol === 'http:') ? u : '#';
+    } catch { return '#'; }
+  }
+
   function showTab(name, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
@@ -225,7 +232,7 @@
     card.innerHTML = `
       <div class="card-author">${esc(post.author)}</div>
       <div class="card-text">${esc(preview)}</div>
-      ${post.post_url ? `<a class="card-link" href="${esc(post.post_url)}" target="_blank" rel="noreferrer">View on LinkedIn →</a>` : ''}`;
+      ${post.post_url ? `<a class="card-link" href="${esc(safeUrl(post.post_url))}" target="_blank" rel="noreferrer">View on LinkedIn →</a>` : ''}`;
     pane.appendChild(card);
   }
 
@@ -275,7 +282,10 @@
     if (es) { es.close(); }
     es = new EventSource('/stream');
     es.onmessage = handleEvent;
-    es.onerror = () => addFeed('error', 'system', 'SSE connection lost — retrying…');
+    es.onerror = () => {
+      addFeed('error', 'system', 'SSE connection lost — retrying…');
+      document.getElementById('runBtn').disabled = false;
+    };
   }
 
   function startRun() {
@@ -286,7 +296,16 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ num_posts: n }),
-    }).catch(err => addFeed('error', 'system', 'Failed to start: ' + err.message));
+    }).then(r => {
+      if (!r.ok) {
+        document.getElementById('runBtn').disabled = false;
+        r.json().then(body => addFeed('error', 'system', `Server error: ${body.detail || r.status}`))
+          .catch(() => addFeed('error', 'system', `Server error: ${r.status}`));
+      }
+    }).catch(err => {
+      document.getElementById('runBtn').disabled = false;
+      addFeed('error', 'system', 'Failed to start: ' + err.message);
+    });
   }
 
   // Connect SSE on page load to receive events immediately
