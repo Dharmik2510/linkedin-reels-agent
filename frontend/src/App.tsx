@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import ConfigurePanel from "./components/ConfigurePanel";
 import PipelinePanel from "./components/PipelinePanel";
 import ScriptsPanel from "./components/ScriptsPanel";
+import Terminal from "./components/Terminal";
 
 export default function App() {
   return (
@@ -13,7 +14,7 @@ export default function App() {
         <PipelinePanel />
         <div className={styles.rightColumn}>
           <ScriptsPanel />
-          <section className={styles.panelFlush}>terminal</section>
+          <Terminal />
         </div>
       </div>
     </div>
