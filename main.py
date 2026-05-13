@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
 import config  # noqa: F401 — validates env vars at import time
-from events import event_bus
+from events import event_bus, push
 from models import Tone
 import orchestrator
 
@@ -55,7 +55,7 @@ async def run_pipeline(request: RunRequest) -> JSONResponse:
         try:
             await orchestrator.run(request.num_posts, request.tone)
         except asyncio.CancelledError:
-            await event_bus.put({
+            await push({
                 "type": "stage_changed",
                 "agent": "orchestrator",
                 "message": "Pipeline stopped by user",
