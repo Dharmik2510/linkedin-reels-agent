@@ -1,16 +1,6 @@
 from unittest.mock import AsyncMock
 from unittest.mock import patch as mock_patch
-import pytest
-
-
-@pytest.fixture(autouse=True)
-def clear_bus():
-    from events import event_bus
-    while not event_bus.empty():
-        event_bus.get_nowait()
-    yield
-    while not event_bus.empty():
-        event_bus.get_nowait()
+import pytest  # noqa: F401
 
 
 async def test_login_waits_for_manual_verification_on_checkpoint():

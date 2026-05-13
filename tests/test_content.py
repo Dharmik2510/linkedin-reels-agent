@@ -88,22 +88,21 @@ async def test_run_returns_none_on_api_error():
 
 
 async def test_run_emits_generating_event():
-    from events import event_bus
-    while not event_bus.empty():
-        event_bus.get_nowait()
+    from events import hub
 
     mock_response = MagicMock()
     mock_response.content = [MagicMock(text=SAMPLE_JSON)]
     mock_client = AsyncMock()
     mock_client.messages.create = AsyncMock(return_value=mock_response)
 
-    with patch("agents.content.get_client", return_value=mock_client):
-        from agents import content
-        await content.run(SAMPLE_POST, 2)
+    async with hub.subscribe() as q:
+        with patch("agents.content.get_client", return_value=mock_client):
+            from agents import content
+            await content.run(SAMPLE_POST, 2)
 
-    events = []
-    while not event_bus.empty():
-        events.append(event_bus.get_nowait())
+        events = []
+        while not q.empty():
+            events.append(q.get_nowait())
 
     types = [e["type"] for e in events]
     assert "content_generating" in types
@@ -111,20 +110,19 @@ async def test_run_emits_generating_event():
 
 
 async def test_run_emits_error_event_on_failure():
-    from events import event_bus
-    while not event_bus.empty():
-        event_bus.get_nowait()
+    from events import hub
 
     mock_client = AsyncMock()
     mock_client.messages.create = AsyncMock(side_effect=Exception("boom"))
 
-    with patch("agents.content.get_client", return_value=mock_client):
-        from agents import content
-        await content.run(SAMPLE_POST, 0)
+    async with hub.subscribe() as q:
+        with patch("agents.content.get_client", return_value=mock_client):
+            from agents import content
+            await content.run(SAMPLE_POST, 0)
 
-    events = []
-    while not event_bus.empty():
-        events.append(event_bus.get_nowait())
+        events = []
+        while not q.empty():
+            events.append(q.get_nowait())
 
     assert any(e["type"] == "content_error" for e in events)
     error_event = next(e for e in events if e["type"] == "content_error")

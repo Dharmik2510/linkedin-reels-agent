@@ -150,11 +150,9 @@ async def test_run_counts_raised_exceptions_as_errors():
 
 @pytest.mark.asyncio
 async def test_run_emits_stage_changed_events(monkeypatch):
-    from datetime import datetime, timezone
+    from datetime import datetime, timezone  # noqa: F401
     from agents import content, scraper
     import orchestrator, events as events_mod
-
-    events_mod.event_bus = asyncio.Queue()
 
     fake_post = type("P", (), {
         "model_dump": lambda self, **k: {"author": "A", "text_content": "x", "post_url": "", "scraped_at": "t"},
@@ -171,12 +169,13 @@ async def test_run_emits_stage_changed_events(monkeypatch):
     monkeypatch.setattr(scraper, "run", fake_scrape)
     monkeypatch.setattr(content, "run", fake_content)
 
-    await orchestrator.run(2, tone="Punchy")
-
-    seen_stages = []
-    while not events_mod.event_bus.empty():
-        ev = events_mod.event_bus.get_nowait()
-        if ev.get("type") == "stage_changed":
-            seen_stages.append(ev["payload"]["stage"])
+    seen_stages: list[str] = []
+    async with events_mod.hub.subscribe() as q:
+        await orchestrator.run(2, tone="Punchy")
+        # Drain any events emitted during the run
+        while not q.empty():
+            ev = q.get_nowait()
+            if ev.get("type") == "stage_changed":
+                seen_stages.append(ev["payload"]["stage"])
 
     assert seen_stages == ["scraping", "generating", "done"]

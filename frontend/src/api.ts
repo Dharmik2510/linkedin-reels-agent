@@ -15,8 +15,12 @@ export async function stopRun(): Promise<void> {
   await fetch("/stop", { method: "POST" });
 }
 
-export function subscribe(onEvent: (e: MessageEvent) => void): EventSource {
+export function subscribe(
+  onEvent: (e: MessageEvent) => void,
+  onError?: (e: Event) => void,
+): EventSource {
   const es = new EventSource("/stream");
   es.onmessage = onEvent;
+  if (onError) es.onerror = onError;
   return es;
 }

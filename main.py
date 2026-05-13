@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
 import config  # noqa: F401 — validates env vars at import time
-from events import event_bus, push
+from events import hub, push
 from models import Tone
 import orchestrator
 
@@ -46,12 +46,13 @@ if (_FRONTEND_DIST / "assets").exists():
 @app.get("/stream")
 async def stream() -> EventSourceResponse:
     async def generator():
-        while True:
-            try:
-                event = await asyncio.wait_for(event_bus.get(), timeout=15.0)
-                yield {"data": json.dumps(event)}
-            except asyncio.TimeoutError:
-                yield {"comment": "ping"}
+        async with hub.subscribe() as q:
+            while True:
+                try:
+                    event = await asyncio.wait_for(q.get(), timeout=15.0)
+                    yield {"data": json.dumps(event)}
+                except asyncio.TimeoutError:
+                    yield {"comment": "ping"}
 
     return EventSourceResponse(generator(), ping=0)
 

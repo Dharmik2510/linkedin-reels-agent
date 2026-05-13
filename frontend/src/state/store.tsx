@@ -23,7 +23,8 @@ type Action =
   | { type: "SET_COUNT"; n: number }
   | { type: "SET_TONE"; tone: Tone }
   | { type: "RESET" }
-  | { type: "EVENT"; ev: RawEvent };
+  | { type: "EVENT"; ev: RawEvent }
+  | { type: "STREAM_ERROR" };
 
 const initial: RunState = {
   count: 10,
@@ -188,6 +189,20 @@ function reducer(state: RunState, action: Action): RunState {
           return next;
       }
     }
+    case "STREAM_ERROR": {
+      const t = (new Date()).toLocaleTimeString("en-GB", { hour12: false });
+      const log: LogLine = {
+        t,
+        tag: "stream",
+        level: "warn",
+        msg: "SSE connection lost — backend may be offline",
+      };
+      return {
+        ...state,
+        stage: state.stage === "idle" || state.stage === "done" ? state.stage : "idle",
+        logLines: [...state.logLines, log].slice(-200),
+      };
+    }
     default:
       return state;
   }
@@ -205,14 +220,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const sourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    sourceRef.current = subscribe((m) => {
-      try {
-        const ev = JSON.parse(m.data) as RawEvent;
-        dispatch({ type: "EVENT", ev });
-      } catch {
-        /* keep-alive comment frame */
-      }
-    });
+    sourceRef.current = subscribe(
+      (m) => {
+        try {
+          const ev = JSON.parse(m.data) as RawEvent;
+          dispatch({ type: "EVENT", ev });
+        } catch {
+          /* keep-alive comment frame */
+        }
+      },
+      () => dispatch({ type: "STREAM_ERROR" }),
+    );
     return () => sourceRef.current?.close();
   }, []);
 

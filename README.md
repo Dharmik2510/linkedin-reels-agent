@@ -20,9 +20,10 @@ For frontend development with hot reload, run `cd frontend && npm run dev` in a 
 ## Usage
 
 1. Open http://localhost:8000 in your browser
-2. Enter the number of saved posts to process
-3. Click **Run** — watch activity stream in real time
-4. Find your Reels scripts in the "Reels Scripts" tab
+2. Pick the number of posts from the dropdown and choose a tone (Punchy, Story-led, Analytical, Educational)
+3. Click **Run pipeline** — the status pill goes live and the pipeline animates as posts are scraped and reels are generated
+4. Generated reel scripts appear in the right-hand "Reel scripts" panel; Playwright agent logs stream into the terminal below
+5. Click **Stop run** during a run to cancel cleanly
 
 ## Notes
 - LinkedIn is scraped in headed mode (browser window opens) to avoid bot detection
