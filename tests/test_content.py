@@ -145,3 +145,11 @@ async def test_run_passes_tone_into_system_prompt():
     call_args = mock_client.messages.create.call_args
     sys_block = call_args.kwargs["system"][0]["text"]
     assert "story-led" in sys_block.lower()
+
+
+def test_build_system_prompt_unknown_tone_falls_back_to_punchy():
+    from agents.content import build_system_prompt, TONE_GUIDE
+    prompt = build_system_prompt("Whimsical")  # type: ignore[arg-type]
+    assert "Whimsical" not in prompt
+    assert "'Punchy' tone" in prompt
+    assert TONE_GUIDE["Punchy"] in prompt

@@ -5,7 +5,7 @@ import anthropic
 
 import config
 from events import push
-from models import Post, ReelsScript
+from models import Post, ReelsScript, Tone
 
 TONE_GUIDE = {
     "Punchy":      "Short, snappy sentences. Hard hooks. Emphasise the surprising number, claim, or twist.",
@@ -15,11 +15,12 @@ TONE_GUIDE = {
 }
 
 
-def build_system_prompt(tone: str) -> str:
-    guidance = TONE_GUIDE.get(tone, TONE_GUIDE["Punchy"])
+def build_system_prompt(tone: Tone) -> str:
+    safe_tone = tone if tone in TONE_GUIDE else "Punchy"
+    guidance = TONE_GUIDE[safe_tone]
     return (
         "You are an expert Instagram Reels scriptwriter. Transform the LinkedIn post content "
-        f"into an Instagram Reels script in the '{tone}' tone. {guidance}\n\n"
+        f"into an Instagram Reels script in the '{safe_tone}' tone. {guidance}\n\n"
         "Output valid JSON with these fields:\n"
         "- hook: string (first 3 seconds, attention-grabbing opener, max 15 words)\n"
         "- script: string (30-60 second spoken script, conversational tone, broken into lines)\n"
@@ -49,7 +50,7 @@ def _parse_script(raw: str) -> ReelsScript:
     return ReelsScript(**json.loads(text))
 
 
-async def run(post: Post, post_index: int, tone: str = "Punchy") -> ReelsScript | None:
+async def run(post: Post, post_index: int, tone: Tone = "Punchy") -> ReelsScript | None:
     now = datetime.now(timezone.utc).isoformat()
     await push({
         "type": "content_generating",
