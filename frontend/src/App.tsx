@@ -1,6 +1,7 @@
 import styles from "./styles/app.module.css";
 import Header from "./components/Header";
 import ConfigurePanel from "./components/ConfigurePanel";
+import PipelinePanel from "./components/PipelinePanel";
 
 export default function App() {
   return (
@@ -8,7 +9,7 @@ export default function App() {
       <Header />
       <div className={styles.grid}>
         <ConfigurePanel />
-        <section className={styles.panelFlush}>pipeline</section>
+        <PipelinePanel />
         <div className={styles.rightColumn}>
           <section className={styles.panel}>scripts</section>
           <section className={styles.panelFlush}>terminal</section>
