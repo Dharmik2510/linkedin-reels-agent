@@ -7,3 +7,7 @@ __pycache__/
 linkedin_login_debug.png
 linkedin_saved_posts_debug.png
 linkedin_saved_posts_main.html
+
+# frontend
+frontend/node_modules
+frontend/dist
