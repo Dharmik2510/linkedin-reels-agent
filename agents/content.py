@@ -7,16 +7,27 @@ import config
 from events import push
 from models import Post, ReelsScript
 
-SYSTEM_PROMPT = (
-    "You are an expert Instagram Reels scriptwriter. Transform the LinkedIn post content "
-    "into a punchy, engaging Instagram Reels script. Output valid JSON with these fields:\n"
-    "- hook: string (first 3 seconds, attention-grabbing opener, max 15 words)\n"
-    "- script: string (30-60 second spoken script, conversational tone, broken into lines)\n"
-    "- caption: string (Instagram caption with relevant hashtags, max 150 chars)\n"
-    "- hashtags: array of 10 strings (no # prefix)\n"
-    "- cta: string (call to action, max 10 words)\n"
-    "Output ONLY the JSON object. No markdown, no explanation."
-)
+TONE_GUIDE = {
+    "Punchy":      "Short, snappy sentences. Hard hooks. Emphasise the surprising number, claim, or twist.",
+    "Story-led":   "Open with a scene or character. Carry a single narrative arc across the script.",
+    "Analytical":  "Lead with the data point or insight. Cite the mechanism or evidence in each scene.",
+    "Educational": "Frame as a step-by-step breakdown. The viewer should leave knowing how to do something.",
+}
+
+
+def build_system_prompt(tone: str) -> str:
+    guidance = TONE_GUIDE.get(tone, TONE_GUIDE["Punchy"])
+    return (
+        "You are an expert Instagram Reels scriptwriter. Transform the LinkedIn post content "
+        f"into an Instagram Reels script in the '{tone}' tone. {guidance}\n\n"
+        "Output valid JSON with these fields:\n"
+        "- hook: string (first 3 seconds, attention-grabbing opener, max 15 words)\n"
+        "- script: string (30-60 second spoken script, conversational tone, broken into lines)\n"
+        "- caption: string (Instagram caption with relevant hashtags, max 150 chars)\n"
+        "- hashtags: array of 10 strings (no # prefix)\n"
+        "- cta: string (call to action, max 10 words)\n"
+        "Output ONLY the JSON object. No markdown, no explanation."
+    )
 
 _client: anthropic.AsyncAnthropic | None = None
 
@@ -38,13 +49,13 @@ def _parse_script(raw: str) -> ReelsScript:
     return ReelsScript(**json.loads(text))
 
 
-async def run(post: Post, post_index: int) -> ReelsScript | None:
+async def run(post: Post, post_index: int, tone: str = "Punchy") -> ReelsScript | None:
     now = datetime.now(timezone.utc).isoformat()
     await push({
         "type": "content_generating",
         "agent": "content",
-        "message": f"Generating Reels script for post {post_index + 1}",
-        "payload": {"post_index": post_index},
+        "message": f"Generating Reels script for post {post_index + 1} (tone={tone})",
+        "payload": {"post_index": post_index, "tone": tone},
         "timestamp": now,
     })
     try:
@@ -54,7 +65,7 @@ async def run(post: Post, post_index: int) -> ReelsScript | None:
             max_tokens=1024,
             system=[{
                 "type": "text",
-                "text": SYSTEM_PROMPT,
+                "text": build_system_prompt(tone),
                 "cache_control": {"type": "ephemeral"},
             }],
             messages=[{"role": "user", "content": post.text_content}],

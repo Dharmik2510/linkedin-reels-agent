@@ -87,7 +87,7 @@ async def test_run_continues_after_partial_failure():
     async def capture(event: dict) -> None:
         emitted.append(event)
 
-    async def sometimes_fail(post, index):
+    async def sometimes_fail(post, index, **kwargs):
         nonlocal call_count
         call_count += 1
         return None if index == 1 else SAMPLE_SCRIPT

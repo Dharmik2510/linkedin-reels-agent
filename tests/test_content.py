@@ -130,3 +130,18 @@ async def test_run_emits_error_event_on_failure():
     error_event = next(e for e in events if e["type"] == "content_error")
     assert "boom" in error_event["message"]
     assert error_event["payload"]["post_index"] == 0
+
+
+async def test_run_passes_tone_into_system_prompt():
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text=SAMPLE_JSON)]
+    mock_client = AsyncMock()
+    mock_client.messages.create = AsyncMock(return_value=mock_response)
+
+    with patch("agents.content.get_client", return_value=mock_client):
+        from agents import content
+        await content.run(SAMPLE_POST, 0, tone="Story-led")
+
+    call_args = mock_client.messages.create.call_args
+    sys_block = call_args.kwargs["system"][0]["text"]
+    assert "story-led" in sys_block.lower()

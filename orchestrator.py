@@ -30,7 +30,7 @@ async def run(num_posts: int, tone: str = "Punchy") -> None:
 
     async def generate_with_limit(post, index):
         async with semaphore:
-            return await content.run(post, index)
+            return await content.run(post, index, tone=tone)
 
     results = await asyncio.gather(
         *[generate_with_limit(post, i) for i, post in enumerate(posts)],
