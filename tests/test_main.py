@@ -71,3 +71,27 @@ def test_run_rejects_over_100_num_posts():
     client = TestClient(app)
     response = client.post("/run", json={"num_posts": 101})
     assert response.status_code == 422
+
+
+def test_run_accepts_valid_tone():
+    from main import app
+    client = TestClient(app)
+    with patch("main.orchestrator.run", new_callable=AsyncMock):
+        response = client.post("/run", json={"num_posts": 3, "tone": "Punchy"})
+    assert response.status_code == 200
+    assert response.json()["tone"] == "Punchy"
+
+
+def test_run_rejects_invalid_tone():
+    from main import app
+    client = TestClient(app)
+    response = client.post("/run", json={"num_posts": 3, "tone": "Whimsical"})
+    assert response.status_code == 422
+
+
+def test_run_defaults_tone_to_punchy():
+    from main import app
+    client = TestClient(app)
+    with patch("main.orchestrator.run", new_callable=AsyncMock):
+        response = client.post("/run", json={"num_posts": 3})
+    assert response.json()["tone"] == "Punchy"

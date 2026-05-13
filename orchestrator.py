@@ -5,12 +5,12 @@ from agents import content, scraper
 from events import push
 
 
-async def run(num_posts: int) -> None:
+async def run(num_posts: int, tone: str = "Punchy") -> None:
     await push({
         "type": "orchestrator_start",
         "agent": "orchestrator",
-        "message": f"Starting pipeline for {num_posts} posts",
-        "payload": {"num_posts": num_posts},
+        "message": f"Starting pipeline for {num_posts} posts ({tone})",
+        "payload": {"num_posts": num_posts, "tone": tone},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     })
 

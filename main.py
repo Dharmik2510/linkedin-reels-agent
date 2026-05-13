@@ -10,6 +10,7 @@ from sse_starlette.sse import EventSourceResponse
 
 import config  # noqa: F401 — validates env vars at import time
 from events import event_bus
+from models import Tone
 import orchestrator
 
 app = FastAPI(title="LinkedIn Reels Agent")
@@ -40,6 +41,7 @@ async def stream() -> EventSourceResponse:
 
 class RunRequest(BaseModel):
     num_posts: int = Field(default=5, ge=1, le=100)
+    tone: Tone = Field(default="Punchy")
 
 
 @app.post("/run")
@@ -53,13 +55,17 @@ async def run_pipeline(
 
     async def run_and_reset():
         try:
-            await orchestrator.run(request.num_posts)
+            await orchestrator.run(request.num_posts, request.tone)
         finally:
             global _pipeline_running
             _pipeline_running = False
 
     background_tasks.add_task(run_and_reset)
-    return JSONResponse({"status": "started", "num_posts": request.num_posts})
+    return JSONResponse({
+        "status": "started",
+        "num_posts": request.num_posts,
+        "tone": request.tone,
+    })
 
 
 async def serve() -> None:

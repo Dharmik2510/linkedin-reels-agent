@@ -1,7 +1,10 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel
+
+
+Tone = Literal["Punchy", "Story-led", "Analytical", "Educational"]
 
 
 class Post(BaseModel):
