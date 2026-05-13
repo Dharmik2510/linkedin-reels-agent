@@ -1,0 +1,152 @@
+.panel {
+  background: linear-gradient(180deg, var(--bg-2), oklch(0.18 0.008 70));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  padding: 18px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+.headTitle { display: flex; align-items: center; gap: 8px; }
+
+.headBadge {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  display: grid; place-items: center;
+  background: var(--bg-3); color: var(--fg-2);
+  font-size: 10px;
+}
+
+.empty {
+  padding: 30px 16px;
+  text-align: center;
+  color: var(--fg-3);
+  font-size: 13px;
+}
+
+.emptyLabel {
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  margin-bottom: 6px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.list::-webkit-scrollbar { width: 6px; }
+.list::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+
+.card {
+  background: var(--bg-3);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-card);
+  padding: 12px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: enter 0.45s cubic-bezier(.4, 0, .2, 1) forwards;
+}
+
+@keyframes enter { to { opacity: 1; transform: translateY(0); } }
+
+.row1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.idx {
+  width: 22px; height: 22px;
+  border-radius: 4px;
+  background: oklch(0.30 0.04 130 / 0.5);
+  color: var(--accent);
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  display: grid; place-items: center;
+}
+
+.title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dur {
+  font-family: "Geist Mono", monospace;
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--bg);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+}
+
+.hook {
+  margin-top: 8px;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--fg-2);
+  line-height: 1.4;
+  background: oklch(0.20 0.01 70);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 8px 10px;
+}
+
+.scenes {
+  display: flex;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.sceneBar {
+  flex: 1;
+  height: 3px;
+  background: var(--bg);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.sceneBar i {
+  display: block;
+  height: 100%;
+  background: var(--accent-deep);
+}
+
+.sceneBar.hl i { background: var(--accent); }
+
+.tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-family: "Geist Mono", monospace;
+  font-size: 10px;
+  color: var(--fg-3);
+  padding: 2px 6px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+}
