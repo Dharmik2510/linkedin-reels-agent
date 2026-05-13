@@ -1,0 +1,126 @@
+.wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+}
+
+.connector {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.connector path {
+  fill: none;
+  stroke: oklch(0.35 0.02 70);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 4;
+}
+
+.connector path.live {
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-dasharray: 6 8;
+  filter: drop-shadow(0 0 4px var(--accent));
+  animation: flow 1.4s linear infinite;
+}
+
+@keyframes flow {
+  to { stroke-dashoffset: -28; }
+}
+
+.rings {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+}
+
+.r1 { inset: 20px; }
+.r2 { inset: 50px; border-style: dashed; }
+.r3 { inset: 80px; }
+
+.spin1 { animation: spin1 18s linear infinite; }
+.spin2 { animation: spin2 14s linear infinite reverse; }
+.spin3 { animation: spin3 10s linear infinite; }
+
+@keyframes spin1 { to { transform: rotate(360deg); } }
+@keyframes spin2 { to { transform: rotate(-360deg); } }
+@keyframes spin3 { to { transform: rotate(360deg); } }
+
+.ringTick {
+  position: absolute;
+  left: 50%;
+  width: 2px;
+  height: 8px;
+  background: var(--line-2);
+  transform-origin: center calc(50% + 0px);
+}
+
+.ringTick.accent {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+.particles {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  pointer-events: none;
+}
+
+.particles circle {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 4px var(--accent));
+  transition: opacity 0.3s ease;
+}
+
+.bulb {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, oklch(0.92 0.18 130 / 0.55), transparent 50%),
+    radial-gradient(circle at 70% 70%, oklch(0.55 0.16 130 / 0.45), transparent 55%),
+    oklch(0.22 0.02 130);
+  box-shadow:
+    0 0 60px oklch(0.88 0.19 128 / 0.25),
+    inset 0 0 30px oklch(0 0 0 / 0.4);
+  display: grid;
+  place-items: center;
+}
+
+.bulb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  animation: pulse 3s ease-out infinite;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.glyph { text-align: center; }
+.big { font-size: 22px; font-weight: 700; color: var(--fg); }
+.lbl {
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 6px var(--accent);
+}
