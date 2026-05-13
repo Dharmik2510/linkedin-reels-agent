@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
 import pytest
@@ -145,3 +146,37 @@ async def test_run_counts_raised_exceptions_as_errors():
     complete = next(e for e in emitted if e["type"] == "orchestrator_complete")
     assert complete["payload"]["errors"] == 3
     assert complete["payload"]["scripts_generated"] == 0
+
+
+@pytest.mark.asyncio
+async def test_run_emits_stage_changed_events(monkeypatch):
+    from datetime import datetime, timezone
+    from agents import content, scraper
+    import orchestrator, events as events_mod
+
+    events_mod.event_bus = asyncio.Queue()
+
+    fake_post = type("P", (), {
+        "model_dump": lambda self, **k: {"author": "A", "text_content": "x", "post_url": "", "scraped_at": "t"},
+        "text_content": "x",
+        "author": "A",
+    })()
+
+    async def fake_scrape(n):
+        return [fake_post for _ in range(n)]
+
+    async def fake_content(post, idx, tone="Punchy"):
+        return None
+
+    monkeypatch.setattr(scraper, "run", fake_scrape)
+    monkeypatch.setattr(content, "run", fake_content)
+
+    await orchestrator.run(2, tone="Punchy")
+
+    seen_stages = []
+    while not events_mod.event_bus.empty():
+        ev = events_mod.event_bus.get_nowait()
+        if ev.get("type") == "stage_changed":
+            seen_stages.append(ev["payload"]["stage"])
+
+    assert seen_stages == ["scraping", "generating", "done"]

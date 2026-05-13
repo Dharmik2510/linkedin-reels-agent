@@ -3,16 +3,29 @@ from datetime import datetime, timezone
 
 from agents import content, scraper
 from events import push
+from models import Tone
 
 
-async def run(num_posts: int, tone: str = "Punchy") -> None:
+async def run(num_posts: int, tone: Tone = "Punchy") -> None:
+    now = lambda: datetime.now(timezone.utc).isoformat()
+
+    async def stage(name: str) -> None:
+        await push({
+            "type": "stage_changed",
+            "agent": "orchestrator",
+            "message": f"stage: {name}",
+            "payload": {"stage": name},
+            "timestamp": now(),
+        })
+
     await push({
         "type": "orchestrator_start",
         "agent": "orchestrator",
         "message": f"Starting pipeline for {num_posts} posts ({tone})",
         "payload": {"num_posts": num_posts, "tone": tone},
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": now(),
     })
+    await stage("scraping")
 
     try:
         posts = await scraper.run(num_posts)
@@ -22,9 +35,12 @@ async def run(num_posts: int, tone: str = "Punchy") -> None:
             "agent": "orchestrator",
             "message": f"Scraper failed: {exc}",
             "payload": {},
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": now(),
         })
+        await stage("idle")
         return
+
+    await stage("generating")
 
     semaphore = asyncio.Semaphore(3)
 
@@ -42,6 +58,8 @@ async def run(num_posts: int, tone: str = "Punchy") -> None:
     )
     errors = len(results) - scripts_generated
 
+    await stage("done")
+
     await push({
         "type": "orchestrator_complete",
         "agent": "orchestrator",
@@ -53,5 +71,5 @@ async def run(num_posts: int, tone: str = "Punchy") -> None:
             "scripts_generated": scripts_generated,
             "errors": errors,
         },
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": now(),
     })
