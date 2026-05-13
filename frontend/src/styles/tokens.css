@@ -1,2 +1,53 @@
-:root { color-scheme: dark; }
-body { margin: 0; background: #0f0e0d; color: #f5f3ee; font-family: system-ui, sans-serif; }
+:root {
+  color-scheme: dark;
+
+  --bg: oklch(0.16 0.008 70);
+  --bg-2: oklch(0.20 0.010 70);
+  --bg-3: oklch(0.24 0.012 70);
+  --line: oklch(0.30 0.012 70);
+  --line-2: oklch(0.38 0.012 70);
+  --fg: oklch(0.96 0.012 80);
+  --fg-2: oklch(0.78 0.010 80);
+  --fg-3: oklch(0.55 0.010 80);
+  --accent: oklch(0.88 0.19 128);
+  --accent-deep: oklch(0.55 0.16 130);
+  --warn: oklch(0.82 0.15 70);
+  --danger: oklch(0.70 0.18 25);
+  --info: oklch(0.75 0.10 230);
+
+  --radius-panel: 14px;
+  --radius-card: 10px;
+  --radius-chip: 4px;
+  --radius-pill: 999px;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+body {
+  background:
+    radial-gradient(1200px 700px at 70% -10%, oklch(0.24 0.04 130 / 0.18), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, oklch(0.22 0.02 60 / 0.5), transparent 60%),
+    var(--bg);
+  color: var(--fg);
+  font-family: "Inter", system-ui, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  overflow-x: hidden;
+}
+
+.mono {
+  font-family: "Geist Mono", ui-monospace, monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

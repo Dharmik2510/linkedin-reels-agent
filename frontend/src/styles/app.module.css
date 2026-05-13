@@ -1,0 +1,38 @@
+.app {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 22px 28px 28px;
+}
+
+.grid {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: 320px 1fr 380px;
+  gap: 18px;
+  align-items: stretch;
+}
+
+@media (max-width: 1180px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+}
+
+.panel {
+  background: linear-gradient(180deg, var(--bg-2), oklch(0.18 0.008 70));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  padding: 18px;
+  position: relative;
+}
+
+.panelFlush {
+  composes: panel;
+  padding: 0;
+  overflow: hidden;
+}
