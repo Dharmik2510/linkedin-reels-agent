@@ -1,0 +1,107 @@
+.top {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandMark {
+  width: 34px;
+  height: 34px;
+  position: relative;
+  border-radius: 8px;
+  background: linear-gradient(140deg, var(--accent), var(--accent-deep));
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 1px oklch(0.92 0.18 130 / 0.4), 0 6px 24px oklch(0.88 0.19 128 / 0.25);
+}
+
+.brandMark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(90deg, transparent 0 3px, oklch(0 0 0 / 0.1) 3px 4px);
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+}
+
+.brandMark svg {
+  width: 18px;
+  height: 18px;
+  color: oklch(0.18 0.02 130);
+  position: relative;
+  z-index: 1;
+}
+
+.brandName {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-size: 18px;
+}
+
+.brandSub {
+  color: var(--fg-3);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: "Geist Mono", monospace;
+}
+
+.spacer { flex: 1; }
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  font-family: "Geist Mono", monospace;
+  font-size: 12px;
+  color: var(--fg-2);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fg-3);
+}
+
+.dot.live {
+  background: var(--accent);
+  color: var(--accent);
+  animation: ping 1.6s ease-out infinite;
+}
+
+@keyframes ping {
+  0%   { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+  80%  { box-shadow: 0 0 0 8px transparent; opacity: 0.6; }
+  100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
+}
+
+.iconBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  display: grid;
+  place-items: center;
+  color: var(--fg-2);
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  color: var(--fg);
+  border-color: var(--accent);
+}

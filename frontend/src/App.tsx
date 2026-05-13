@@ -1,11 +1,10 @@
 import styles from "./styles/app.module.css";
+import Header from "./components/Header";
 
 export default function App() {
   return (
     <div className={styles.app}>
-      <header style={{ height: 60, borderBottom: "1px solid var(--line)" }}>
-        header placeholder
-      </header>
+      <Header />
       <div className={styles.grid}>
         <section className={styles.panel}>configure</section>
         <section className={styles.panelFlush}>pipeline</section>
