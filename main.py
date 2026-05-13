@@ -1,9 +1,10 @@
 import asyncio
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import uvicorn
-from fastapi import BackgroundTasks, FastAPI
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
@@ -15,7 +16,7 @@ import orchestrator
 
 app = FastAPI(title="LinkedIn Reels Agent")
 
-_pipeline_running: bool = False
+_current_task: asyncio.Task | None = None
 
 _DASHBOARD_PATH = Path(__file__).parent / "dashboard" / "index.html"
 DASHBOARD_HTML: str = _DASHBOARD_PATH.read_text()
@@ -45,27 +46,42 @@ class RunRequest(BaseModel):
 
 
 @app.post("/run")
-async def run_pipeline(
-    request: RunRequest, background_tasks: BackgroundTasks
-) -> JSONResponse:
-    global _pipeline_running
-    if _pipeline_running:
+async def run_pipeline(request: RunRequest) -> JSONResponse:
+    global _current_task
+    if _current_task is not None and not _current_task.done():
         return JSONResponse({"status": "already_running"}, status_code=409)
-    _pipeline_running = True
 
     async def run_and_reset():
         try:
             await orchestrator.run(request.num_posts, request.tone)
+        except asyncio.CancelledError:
+            await event_bus.put({
+                "type": "stage_changed",
+                "agent": "orchestrator",
+                "message": "Pipeline stopped by user",
+                "payload": {"stage": "idle"},
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            raise
         finally:
-            global _pipeline_running
-            _pipeline_running = False
+            global _current_task
+            _current_task = None
 
-    background_tasks.add_task(run_and_reset)
+    _current_task = asyncio.create_task(run_and_reset())
     return JSONResponse({
         "status": "started",
         "num_posts": request.num_posts,
         "tone": request.tone,
     })
+
+
+@app.post("/stop")
+async def stop_pipeline() -> JSONResponse:
+    global _current_task
+    if _current_task is None or _current_task.done():
+        return JSONResponse({"status": "idle"})
+    _current_task.cancel()
+    return JSONResponse({"status": "stopped"})
 
 
 async def serve() -> None:

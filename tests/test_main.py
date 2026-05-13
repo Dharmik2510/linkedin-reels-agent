@@ -46,17 +46,21 @@ def test_run_rejects_invalid_body():
 
 
 def test_run_returns_409_when_already_running():
+    import asyncio
     import main as main_module
-    main_module._pipeline_running = True  # simulate running state
-    try:
-        from main import app
-        client = TestClient(app)
-        with patch("main.orchestrator.run", new_callable=AsyncMock):
-            response = client.post("/run", json={"num_posts": 3})
-        assert response.status_code == 409
-        assert response.json()["status"] == "already_running"
-    finally:
-        main_module._pipeline_running = False  # reset
+
+    async def slow_run(num_posts, tone="Punchy"):
+        await asyncio.sleep(10)
+
+    from main import app
+    main_module._current_task = None
+    with TestClient(app) as client:
+        with patch("main.orchestrator.run", new=slow_run):
+            first = client.post("/run", json={"num_posts": 3})
+            assert first.status_code == 200
+            second = client.post("/run", json={"num_posts": 3})
+            assert second.status_code == 409
+            client.post("/stop")  # cleanup
 
 
 def test_run_rejects_zero_num_posts():
@@ -95,3 +99,43 @@ def test_run_defaults_tone_to_punchy():
     with patch("main.orchestrator.run", new_callable=AsyncMock):
         response = client.post("/run", json={"num_posts": 3})
     assert response.json()["tone"] == "Punchy"
+
+
+def test_stop_when_idle_returns_no_op():
+    from main import app
+    client = TestClient(app)
+    response = client.post("/stop")
+    assert response.status_code == 200
+    assert response.json()["status"] == "idle"
+
+
+def test_stop_cancels_running_pipeline():
+    import asyncio
+    import main as main_module
+
+    async def slow_run(num_posts, tone="Punchy"):
+        try:
+            await asyncio.sleep(5)
+        except asyncio.CancelledError:
+            main_module._cancelled_marker = True
+            raise
+
+    main_module._cancelled_marker = False
+    from main import app
+    with TestClient(app) as client:
+        with patch("main.orchestrator.run", new=slow_run):
+            started = client.post("/run", json={"num_posts": 3})
+            assert started.json()["status"] == "started"
+            import time
+            for _ in range(20):
+                if main_module._current_task is not None:
+                    break
+                time.sleep(0.05)
+            stopped = client.post("/stop")
+        assert stopped.status_code == 200
+        assert stopped.json()["status"] == "stopped"
+        for _ in range(20):
+            if main_module._cancelled_marker:
+                break
+            time.sleep(0.05)
+        assert main_module._cancelled_marker is True
