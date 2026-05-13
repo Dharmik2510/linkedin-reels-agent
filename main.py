@@ -1,11 +1,13 @@
 import asyncio
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
@@ -18,13 +20,27 @@ app = FastAPI(title="LinkedIn Reels Agent")
 
 _current_task: asyncio.Task | None = None
 
-_DASHBOARD_PATH = Path(__file__).parent / "dashboard" / "index.html"
-DASHBOARD_HTML: str = _DASHBOARD_PATH.read_text()
+_DEFAULT_DIST = Path(__file__).parent / "frontend" / "dist"
+_FRONTEND_DIST = Path(os.getenv("REELIFY_FRONTEND_DIST", _DEFAULT_DIST))
 
 
 @app.get("/")
 async def index() -> HTMLResponse:
-    return HTMLResponse(DASHBOARD_HTML)
+    index_path = _FRONTEND_DIST / "index.html"
+    if not index_path.exists():
+        return HTMLResponse(
+            "<h1>Frontend not built</h1><p>Run <code>cd frontend && npm install && npm run build</code>.</p>",
+            status_code=503,
+        )
+    return HTMLResponse(index_path.read_text())
+
+
+if (_FRONTEND_DIST / "assets").exists():
+    app.mount(
+        "/assets",
+        StaticFiles(directory=_FRONTEND_DIST / "assets"),
+        name="assets",
+    )
 
 
 @app.get("/stream")

@@ -8,8 +8,14 @@ Scrapes your LinkedIn saved posts and transforms them into Instagram Reels scrip
 pip install -r requirements.txt
 playwright install chromium
 cp .env.example .env  # fill in your credentials
-python main.py        # opens dashboard at http://localhost:8000
+
+# Build the frontend once
+cd frontend && npm install && npm run build && cd ..
+
+python main.py        # serves the built dashboard at http://localhost:8000
 ```
+
+For frontend development with hot reload, run `cd frontend && npm run dev` in a second terminal and open http://localhost:5173 — Vite will proxy /run, /stop and /stream to the FastAPI server on :8000.
 
 ## Usage
 

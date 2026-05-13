@@ -8,13 +8,20 @@ from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 
 
-def test_index_returns_html():
-    from main import app
-    client = TestClient(app)
+def test_index_returns_html(tmp_path, monkeypatch):
+    # Point the app at a stub dist dir so the test does not require an actual frontend build
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<html><body>reelify</body></html>")
+    monkeypatch.setenv("REELIFY_FRONTEND_DIST", str(dist))
+    # Reload module to pick up env
+    import importlib, main
+    importlib.reload(main)
+    client = TestClient(main.app)
     response = client.get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
-    assert "<html" in response.text.lower()
+    assert "reelify" in response.text.lower()
 
 
 def test_run_returns_started_status():
