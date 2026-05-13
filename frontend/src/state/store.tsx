@@ -11,7 +11,7 @@ interface RunState {
   count: number;
   tone: Tone;
   stage: Stage;
-  posts: Post[];           // most-recent 12 (rolling buffer)
+  posts: Post[];           // most-recent 4 (rolling buffer)
   flying: string;          // id of currently flying-out post
   scripts: Script[];
   logLines: LogLine[];
