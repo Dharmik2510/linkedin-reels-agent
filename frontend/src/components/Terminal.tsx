@@ -12,29 +12,32 @@ export default function Terminal() {
     }
   }, [state.logLines.length]);
 
+  const running = state.stage !== "idle" && state.stage !== "done";
+
   return (
     <section className={styles.panel}>
       <div className={styles.head}>
-        <div className={styles.dots}>
-          <i /><i /><i />
-        </div>
+        <div className={styles.dots}><i /><i /><i /></div>
         <span>playwright · agent.log</span>
+        <span className={styles.subhead}>· stream</span>
         <div className={styles.spacer} />
-        <span>{state.logLines.length} lines</span>
+        <span className={styles.count}>{state.logLines.length} lines</span>
       </div>
       <div className={styles.body} ref={bodyRef}>
-        {state.logLines.length === 0 ? (
+        {state.logLines.length === 0 && (
           <div className={styles.idle}>
             $ reelify --watch <span className={styles.cursor} />
           </div>
-        ) : (
-          state.logLines.map((l, i) => (
-            <div key={i} className={`${styles.line} ${styles[l.level] ?? ""}`}>
-              <span className={styles.t}>{l.t}</span>
-              <span className={styles.tag}>[{l.tag}]</span>
-              <span className={styles.msg}>{l.msg}</span>
-            </div>
-          ))
+        )}
+        {state.logLines.map((l, i) => (
+          <div key={i} className={`${styles.line} ${styles[l.level] ?? ""}`}>
+            <span className={styles.t}>{l.t}</span>
+            <span className={styles.tag}>[{l.tag}]</span>
+            <span className={styles.msg}>{l.msg}</span>
+          </div>
+        ))}
+        {running && (
+          <div className={styles.idle}>$ <span className={styles.cursor} /></div>
         )}
       </div>
     </section>
