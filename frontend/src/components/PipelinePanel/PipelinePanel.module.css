@@ -325,3 +325,16 @@
     font-size: 18px;
   }
 }
+
+.body :global(.hex) {
+  fill: oklch(0.21 0.010 70 / 0.55);
+  stroke: oklch(0.34 0.012 70 / 0.7);
+  stroke-width: 0.6;
+  transition: fill 0.6s ease, stroke 0.6s ease;
+}
+
+.body :global(.hex.lit) {
+  fill: oklch(0.55 0.16 130 / 0.18);
+  stroke: oklch(0.88 0.19 128 / 0.55);
+  transition: fill 0.05s, stroke 0.05s;
+}
