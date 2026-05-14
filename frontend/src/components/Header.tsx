@@ -1,4 +1,6 @@
 import { useStore } from "../state/store";
+import { useElapsed } from "../hooks/useElapsed";
+import { fmtElapsed } from "../utils/text";
 import { Bell, Gear, Play } from "../icons";
 import styles from "./Header.module.css";
 
@@ -11,11 +13,13 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function Header() {
   const { state } = useStore();
-  const live = state.stage !== "idle" && state.stage !== "done";
+  const running = state.stage !== "idle" && state.stage !== "done";
+  const elapsed = useElapsed(running, state.elapsedStart);
   const label =
     state.stage === "done"
       ? `Run complete · ${state.scripts.length} scripts ready`
       : STATUS_LABEL[state.stage] ?? "Idle · agent ready";
+  const showTimer = state.elapsedStart !== null;
 
   return (
     <header className={styles.top}>
@@ -30,8 +34,14 @@ export default function Header() {
       </div>
       <div className={styles.spacer} />
       <div className={styles.statusPill} role="status" aria-live="polite">
-        <span className={`${styles.dot} ${live ? styles.live : ""}`} />
-        {label}
+        <span className={`${styles.dot} ${running ? styles.live : ""}`} />
+        <span>{label}</span>
+        {showTimer && (
+          <>
+            <span className={styles.sep} />
+            <span className={styles.timer}>{fmtElapsed(elapsed)}</span>
+          </>
+        )}
       </div>
       <button className={styles.iconBtn} aria-label="Notifications">
         <Bell />
