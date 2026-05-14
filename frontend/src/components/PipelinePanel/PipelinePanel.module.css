@@ -656,3 +656,80 @@
   color: var(--fg-3);
   letter-spacing: 0.05em;
 }
+
+.body :global(.reel-stack-card) {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, oklch(0.32 0.10 var(--h, 130)), oklch(0.18 0.04 var(--h, 130)));
+  border: 1px solid oklch(0.5 0.10 var(--h, 130) / 0.6);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px oklch(0 0 0 / 0.5);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.4s ease;
+}
+
+.body :global(.reel-stack-card::before) {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 8px;
+  border: 1px dashed oklch(1 0 0 / 0.15);
+  pointer-events: none;
+}
+
+.body :global(.reel-stack-card .sprocket) {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.body :global(.reel-stack-card .sprocket span) {
+  flex: 1;
+  height: 4px;
+  background: oklch(0 0 0 / 0.35);
+  border-radius: 1px;
+}
+
+.body :global(.reel-stack-card .reel-title) {
+  font-size: 11px;
+  font-weight: 700;
+  color: oklch(1 0 0 / 0.92);
+  line-height: 1.2;
+}
+
+.body :global(.reel-stack-card .reel-meta) {
+  font-family: "Geist Mono", monospace;
+  font-size: 9px;
+  color: oklch(1 0 0 / 0.7);
+  margin-top: 4px;
+}
+
+.body :global(.reel-stack-card .play) {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: oklch(1 0 0 / 0.9);
+  display: grid;
+  place-items: center;
+  color: oklch(0.2 0.06 var(--h, 130));
+}
+
+.body :global(.reel-stack-card.fresh) {
+  animation: reelFresh 0.9s ease-out;
+}
+
+@keyframes reelFresh {
+  0%   { transform: var(--rb-tx) translateY(-30px); opacity: 0; filter: brightness(2); }
+  30%  { filter: brightness(1.5); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body :global(.reel-stack-card.fresh) { animation: none; }
+}
