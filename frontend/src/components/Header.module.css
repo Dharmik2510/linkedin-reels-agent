@@ -4,12 +4,14 @@
   gap: 18px;
   padding-bottom: 18px;
   border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .brandMark {
@@ -21,6 +23,7 @@
   display: grid;
   place-items: center;
   box-shadow: 0 0 0 1px oklch(0.92 0.18 130 / 0.4), 0 6px 24px oklch(0.88 0.19 128 / 0.25);
+  flex-shrink: 0;
 }
 
 .brandMark::after {
@@ -55,7 +58,7 @@
   font-family: "Geist Mono", monospace;
 }
 
-.spacer { flex: 1; }
+.spacer { flex: 1; min-width: 0; }
 
 .statusPill {
   display: inline-flex;
@@ -68,6 +71,10 @@
   font-family: "Geist Mono", monospace;
   font-size: 12px;
   color: var(--fg-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .dot {
@@ -75,6 +82,7 @@
   height: 8px;
   border-radius: 50%;
   background: var(--fg-3);
+  flex-shrink: 0;
 }
 
 .dot.live {
@@ -99,9 +107,41 @@
   place-items: center;
   color: var(--fg-2);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .iconBtn:hover {
   color: var(--fg);
   border-color: var(--accent);
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .top {
+    gap: 12px;
+    padding-bottom: 14px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .top {
+    gap: 10px;
+    padding-bottom: 12px;
+  }
+  .brandName {
+    font-size: 16px;
+  }
+  .brandSub {
+    font-size: 10px;
+  }
+  .statusPill {
+    font-size: 11px;
+    padding: 5px 10px;
+    order: 10;
+    flex-basis: 100%;
+  }
+  .spacer {
+    display: none;
+  }
 }

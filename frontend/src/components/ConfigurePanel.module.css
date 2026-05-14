@@ -1,3 +1,10 @@
+.wrapper {
+  background: linear-gradient(180deg, var(--bg-2), oklch(0.18 0.008 70));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  padding: 18px;
+}
+
 .title {
   display: flex;
   align-items: center;
@@ -48,6 +55,7 @@
   color: var(--accent);
   display: grid;
   place-items: center;
+  flex-shrink: 0;
 }
 
 .sourceText { flex: 1; min-width: 0; }
@@ -66,6 +74,7 @@
   background: var(--accent);
   color: var(--accent);
   animation: ping 1.6s ease-out infinite;
+  flex-shrink: 0;
 }
 
 .toneGrid {
@@ -166,4 +175,27 @@
   0%   { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
   80%  { box-shadow: 0 0 0 8px transparent; opacity: 0.6; }
   100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
+}
+
+/* ——— Responsive ——— */
+
+@media (max-width: 900px) {
+  .wrapper {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .wrapper {
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .toneChip {
+    font-size: 11px;
+    padding: 7px 8px;
+  }
+  .runBtn {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
 }

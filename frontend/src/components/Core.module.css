@@ -3,6 +3,7 @@
   display: grid;
   place-items: center;
   overflow: visible;
+  z-index: 1;
 }
 
 .connector {
@@ -123,4 +124,34 @@
   text-transform: uppercase;
   color: var(--accent);
   text-shadow: 0 0 6px var(--accent);
+}
+
+/* ——— Responsive ——— */
+
+@media (max-width: 900px) {
+  .rings {
+    width: 200px;
+    height: 200px;
+  }
+  .particles {
+    width: 200px;
+    height: 200px;
+  }
+  .bulb {
+    width: 90px;
+    height: 90px;
+  }
+  .big {
+    font-size: 18px;
+  }
+  .lbl {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .wrap {
+    transform: scale(0.75);
+    transform-origin: center;
+  }
 }

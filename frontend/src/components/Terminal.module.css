@@ -80,3 +80,26 @@
 }
 
 @keyframes blink { 50% { opacity: 0; } }
+
+/* ——— Responsive ——— */
+
+@media (max-width: 900px) {
+  .panel {
+    height: 180px;
+  }
+}
+
+@media (max-width: 600px) {
+  .panel {
+    height: 160px;
+    border-radius: 10px;
+  }
+  .body {
+    font-size: 10px;
+    padding: 8px 10px;
+  }
+  .head {
+    padding: 8px 10px;
+    font-size: 9px;
+  }
+}

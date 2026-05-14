@@ -150,3 +150,27 @@
   border: 1px solid var(--line-2);
   border-radius: 4px;
 }
+
+/* ——— Responsive ——— */
+
+@media (max-width: 900px) {
+  .panel {
+    padding: 14px;
+  }
+  .list {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+  .panel {
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .list {
+    max-height: none;
+  }
+  .card {
+    padding: 10px;
+  }
+}

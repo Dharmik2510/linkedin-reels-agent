@@ -31,12 +31,7 @@ export default function ConfigurePanel() {
   };
 
   return (
-    <section style={{
-      background: "linear-gradient(180deg, var(--bg-2), oklch(0.18 0.008 70))",
-      border: "1px solid var(--line)",
-      borderRadius: "var(--radius-panel)",
-      padding: 18,
-    }}>
+    <section className={styles.wrapper}>
       <div className={styles.title}>
         <span className={styles.titleBadge}>A</span>
         <span>Configure run</span>

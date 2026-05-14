@@ -12,8 +12,34 @@
   align-items: stretch;
 }
 
+/* Tablet: pipeline full-width on top, configure + scripts side-by-side below */
 @media (max-width: 1180px) {
-  .grid { grid-template-columns: 1fr; }
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Small tablet / large phone: single column */
+@media (max-width: 900px) {
+  .app {
+    padding: 16px 16px 24px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 16px;
+  }
+}
+
+/* Phone */
+@media (max-width: 600px) {
+  .app {
+    padding: 12px 10px 20px;
+  }
+  .grid {
+    gap: 12px;
+    margin-top: 12px;
+  }
 }
 
 .rightColumn {
@@ -23,12 +49,25 @@
   min-height: 0;
 }
 
+@media (max-width: 900px) {
+  .rightColumn {
+    gap: 14px;
+  }
+}
+
 .panel {
   background: linear-gradient(180deg, var(--bg-2), oklch(0.18 0.008 70));
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
   padding: 18px;
   position: relative;
+}
+
+@media (max-width: 600px) {
+  .panel {
+    padding: 14px;
+    border-radius: 10px;
+  }
 }
 
 .panelFlush {
