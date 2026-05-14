@@ -1,18 +1,23 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useStore } from "../state/store";
 import styles from "./Terminal.module.css";
 
 export default function Terminal() {
   const { state } = useStore();
+  const view = useMemo(
+    () => ({ logLines: state.logLines, stage: state.stage }),
+    [state.logLines, state.stage],
+  );
+
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (bodyRef.current) {
       bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
     }
-  }, [state.logLines.length]);
+  }, [view.logLines.length]);
 
-  const running = state.stage !== "idle" && state.stage !== "done";
+  const running = view.stage !== "idle" && view.stage !== "done";
 
   return (
     <section className={styles.panel}>
@@ -21,15 +26,15 @@ export default function Terminal() {
         <span>playwright · agent.log</span>
         <span className={styles.subhead}>· stream</span>
         <div className={styles.spacer} />
-        <span className={styles.count}>{state.logLines.length} lines</span>
+        <span className={styles.count}>{view.logLines.length} lines</span>
       </div>
       <div className={styles.body} ref={bodyRef}>
-        {state.logLines.length === 0 && (
+        {view.logLines.length === 0 && (
           <div className={styles.idle}>
             $ reelify --watch <span className={styles.cursor} />
           </div>
         )}
-        {state.logLines.map((l, i) => (
+        {view.logLines.map((l, i) => (
           <div key={i} className={`${styles.line} ${styles[l.level] ?? ""}`}>
             <span className={styles.t}>{l.t}</span>
             <span className={styles.tag}>[{l.tag}]</span>

@@ -1,10 +1,15 @@
+import { useMemo } from "react";
 import { useStore } from "../state/store";
 import { Chev } from "../icons";
 import styles from "./ScriptsPanel.module.css";
 
 export default function ScriptsPanel() {
   const { state, dispatch } = useStore();
-  const activeId = state.activeScriptId ?? state.scripts[0]?.id ?? null;
+  const view = useMemo(
+    () => ({ scripts: state.scripts, activeScriptId: state.activeScriptId }),
+    [state.scripts, state.activeScriptId],
+  );
+  const activeId = view.activeScriptId ?? view.scripts[0]?.id ?? null;
 
   return (
     <section className={styles.panel}>
@@ -13,17 +18,17 @@ export default function ScriptsPanel() {
           <span className={styles.badge}>E</span>
           <span>Reel scripts</span>
         </div>
-        <span className={styles.count}>{state.scripts.length} ready</span>
+        <span className={styles.count}>{view.scripts.length} ready</span>
       </div>
 
-      {state.scripts.length === 0 ? (
+      {view.scripts.length === 0 ? (
         <div className={styles.empty}>
           <div className={styles.emptyBig}>No scripts yet</div>
           Press <span style={{ color: "var(--accent)" }}>Run pipeline</span> to generate from saved posts.
         </div>
       ) : (
         <div className={styles.list}>
-          {state.scripts.map((s, i) => {
+          {view.scripts.map((s, i) => {
             const active = activeId === s.id;
             return (
               <button

@@ -1,12 +1,17 @@
+import { useMemo } from "react";
 import { useStore } from "../../state/store";
 import Phone from "./Phone";
 import styles from "./PhonePreview.module.css";
 
 export default function PhonePreview() {
   const { state } = useStore();
-  const preview = state.activeScriptId
-    ? state.scripts.find((s) => s.id === state.activeScriptId) ?? state.scripts[0]
-    : state.scripts[0];
+  const view = useMemo(
+    () => ({ scripts: state.scripts, activeScriptId: state.activeScriptId }),
+    [state.scripts, state.activeScriptId],
+  );
+  const preview = view.activeScriptId
+    ? view.scripts.find((s) => s.id === view.activeScriptId) ?? view.scripts[0]
+    : view.scripts[0];
 
   if (!preview) {
     return (
