@@ -18,9 +18,6 @@ interface RunState {
   scrapedCount: number;
   totalPosts: number;
 
-  // v1 leftover — still read by PipelinePanel until Task 19 deletes it.
-  flying: string;
-
   // v2 additions
   comets: Comet[];
   landed: Set<number>;                    // post indices whose comet has landed but script not yet seen
@@ -49,7 +46,6 @@ const initial: RunState = {
   logLines: [],
   scrapedCount: 0,
   totalPosts: 0,
-  flying: "",
   comets: [],
   landed: new Set(),
   pendingScripts: new Map(),

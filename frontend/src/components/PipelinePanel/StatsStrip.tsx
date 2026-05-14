@@ -1,5 +1,6 @@
 import { useCounter } from "../../hooks/useCounter";
 import SlotCounter from "./SlotCounter";
+import styles from "./PipelinePanel.module.css";
 
 interface Props {
   scraped: number;
@@ -16,7 +17,7 @@ export default function StatsStrip({ scraped, count, queued, scripts, avgDur }: 
   const avgDisp = useCounter(avgDur, 500);
 
   return (
-    <div className="pipe-stats">
+    <div className={styles.pipeStats}>
       <div className="stat">
         <div className="k">Scraped</div>
         <div className="v">
