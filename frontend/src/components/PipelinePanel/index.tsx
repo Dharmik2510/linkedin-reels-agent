@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useStore } from "../state/store";
-import { useCounter } from "../hooks/useCounter";
-import type { Stage } from "../types";
-import Core from "./Core";
+import { useStore } from "../../state/store";
+import { useCounter } from "../../hooks/useCounter";
+import type { Stage } from "../../types";
+import Core from "../Core";
 import styles from "./PipelinePanel.module.css";
 
 const STAGE_LIST: { id: Stage; label: string }[] = [
