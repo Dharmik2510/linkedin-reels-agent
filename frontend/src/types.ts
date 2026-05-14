@@ -8,16 +8,23 @@ export interface Post {
   role: string;
   body: string;
   h: number;
+  postIndex: number;
 }
 
 export interface Script {
   id: string;
+  postIndex: number;
   title: string;
   hook: string;
   dur: number;
   sceneCount: number;
   tags: string[];
   body: string;
+  author: string;
+  role: string;
+  initials: string;
+  h: number;
+  keywords: string[];
 }
 
 export interface LogLine {
@@ -27,7 +34,16 @@ export interface LogLine {
   msg: string;
 }
 
-// Raw backend event shape (current contract).
+export interface Comet {
+  id: number;
+  postIndex: number;
+  t: number;          // 0..1 along the path
+  born: number;       // performance.now() at spawn
+  label: string;      // e.g. "MO"
+  hue: number;        // 0..360
+}
+
+// Raw backend event shape (unchanged from v1).
 export interface RawEvent {
   type: string;
   agent: string;

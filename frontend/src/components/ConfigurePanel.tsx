@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { startRun, stopRun } from "../api";
 import { useStore } from "../state/store";
 import type { Tone } from "../types";
@@ -18,7 +19,11 @@ const TONES: Tone[] = ["Punchy", "Story-led", "Analytical", "Educational"];
 
 export default function ConfigurePanel() {
   const { state, dispatch } = useStore();
-  const running = state.stage !== "idle" && state.stage !== "done";
+  const view = useMemo(
+    () => ({ count: state.count, tone: state.tone, stage: state.stage }),
+    [state.count, state.tone, state.stage],
+  );
+  const running = view.stage !== "idle" && view.stage !== "done";
 
   const onRun = async () => {
     if (running) {
@@ -26,7 +31,7 @@ export default function ConfigurePanel() {
       dispatch({ type: "RESET" });
     } else {
       dispatch({ type: "RESET" });
-      await startRun(state.count, state.tone);
+      await startRun(view.count, view.tone);
     }
   };
 
@@ -49,7 +54,7 @@ export default function ConfigurePanel() {
 
       <div className={styles.sectionLabel}>// number of posts</div>
       <Dropdown
-        value={state.count}
+        value={view.count}
         options={POST_COUNT_OPTIONS}
         disabled={running}
         onChange={(n) => dispatch({ type: "SET_COUNT", n })}
@@ -62,7 +67,7 @@ export default function ConfigurePanel() {
             key={t}
             type="button"
             disabled={running}
-            className={`${styles.toneChip} ${state.tone === t ? styles.selected : ""}`}
+            className={`${styles.toneChip} ${view.tone === t ? styles.selected : ""}`}
             onClick={() => dispatch({ type: "SET_TONE", tone: t })}
           >
             {t}
@@ -73,7 +78,7 @@ export default function ConfigurePanel() {
       <button type="button" className={styles.runBtn} onClick={onRun}>
         {running
           ? <><span className={styles.spinner} /> Stop run</>
-          : <><Spark /> {state.stage === "done" ? "Run again" : "Run pipeline"}</>}
+          : <><Spark /> {view.stage === "done" ? "Run again" : "Run pipeline"}</>}
       </button>
 
       <div className={styles.quotas} aria-hidden="true">

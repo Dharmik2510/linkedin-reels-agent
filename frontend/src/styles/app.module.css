@@ -1,37 +1,50 @@
 .app {
-  max-width: 1440px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: 22px 28px 28px;
+  position: relative;
 }
 
 .grid {
-  margin-top: 22px;
+  position: relative;
+  z-index: 1;
+  margin-top: 20px;
   display: grid;
-  grid-template-columns: 320px 1fr 380px;
+  grid-template-columns: 308px minmax(0, 1fr) 408px;
   gap: 18px;
   align-items: stretch;
 }
 
-/* Tablet: pipeline full-width on top, configure + scripts side-by-side below */
-@media (max-width: 1180px) {
-  .grid {
-    grid-template-columns: 1fr 1fr;
-  }
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
 }
 
-/* Small tablet / large phone: single column */
+.termStrip {
+  margin-top: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 1240px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 900px) {
   .app {
     padding: 16px 16px 24px;
   }
   .grid {
-    grid-template-columns: 1fr;
     gap: 14px;
     margin-top: 16px;
   }
+  .rightCol {
+    gap: 14px;
+  }
 }
 
-/* Phone */
 @media (max-width: 600px) {
   .app {
     padding: 12px 10px 20px;
@@ -40,33 +53,24 @@
     gap: 12px;
     margin-top: 12px;
   }
-}
-
-.rightColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  min-height: 0;
-}
-
-@media (max-width: 900px) {
-  .rightColumn {
-    gap: 14px;
+  .termStrip {
+    margin-top: 14px;
   }
 }
 
 .panel {
-  background: linear-gradient(180deg, var(--bg-2), oklch(0.18 0.008 70));
+  background: linear-gradient(180deg, oklch(0.21 0.010 70 / 0.85), oklch(0.17 0.008 70 / 0.85));
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
   padding: 18px;
   position: relative;
+  backdrop-filter: blur(6px);
 }
 
 @media (max-width: 600px) {
   .panel {
     padding: 14px;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 }
 
