@@ -3,6 +3,7 @@ import {
   type ReactNode,
 } from "react";
 import { subscribe } from "../api";
+import { usePipelineEngine } from "../hooks/usePipelineEngine";
 import type {
   Comet, LogLine, Post, RawEvent, Script, Stage, Tone,
 } from "../types";
@@ -245,9 +246,6 @@ function reducer(state: RunState, action: Action): RunState {
         case "content_ready": {
           const script = deriveScript(ev);
           if (!script) return withLog;
-          // TEMP: until usePipelineEngine is wired in Task 6, commit scripts directly.
-          // Remove this line in Task 6.
-          return commitScript(withLog, script);
           // If the comet has already landed, commit the script now.
           if (withLog.landed.has(script!.postIndex)) {
             const nextLanded = new Set(withLog.landed);
@@ -345,6 +343,8 @@ const Ctx = createContext<StoreCtx | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initial);
+  const running = state.stage !== "idle" && state.stage !== "done";
+  usePipelineEngine(state.comets, running, dispatch);
   const sourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
