@@ -14,10 +14,13 @@ export default function App() {
       <div className={styles.grid}>
         <ConfigurePanel />
         <PipelinePanel />
-        <div className={styles.rightColumn}>
+        <div className={styles.rightCol}>
+          {/* PhonePreview will land here in Task 21 */}
           <ScriptsPanel />
-          <Terminal />
         </div>
+      </div>
+      <div className={styles.termStrip}>
+        <Terminal />
       </div>
     </div>
   );
