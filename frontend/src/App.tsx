@@ -5,6 +5,7 @@ import PipelinePanel from "./components/PipelinePanel";
 import ScriptsPanel from "./components/ScriptsPanel";
 import Terminal from "./components/Terminal";
 import Dust from "./components/Dust";
+import PhonePreview from "./components/PhonePreview";
 
 export default function App() {
   return (
@@ -15,7 +16,7 @@ export default function App() {
         <ConfigurePanel />
         <PipelinePanel />
         <div className={styles.rightCol}>
-          {/* PhonePreview will land here in Task 21 */}
+          <PhonePreview />
           <ScriptsPanel />
         </div>
       </div>
