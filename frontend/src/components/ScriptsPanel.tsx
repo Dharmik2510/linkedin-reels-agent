@@ -1,59 +1,53 @@
 import { useStore } from "../state/store";
+import { Chev } from "../icons";
 import styles from "./ScriptsPanel.module.css";
 
 export default function ScriptsPanel() {
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
+  const activeId = state.activeScriptId ?? state.scripts[0]?.id ?? null;
 
   return (
     <section className={styles.panel}>
       <div className={styles.head}>
         <div className={styles.headTitle}>
-          <span className={styles.headBadge}>C</span>
+          <span className={styles.badge}>E</span>
           <span>Reel scripts</span>
         </div>
-        <span>{state.scripts.length} ready</span>
+        <span className={styles.count}>{state.scripts.length} ready</span>
       </div>
 
       {state.scripts.length === 0 ? (
         <div className={styles.empty}>
-          <div className={styles.emptyLabel}>No scripts yet</div>
+          <div className={styles.emptyBig}>No scripts yet</div>
           Press <span style={{ color: "var(--accent)" }}>Run pipeline</span> to generate from saved posts.
         </div>
       ) : (
         <div className={styles.list}>
           {state.scripts.map((s, i) => {
-            const widths = Array.from(
-              { length: s.sceneCount },
-              (_, k) => 50 + ((k * 17 + s.id.length * 3) % 50)
-            );
+            const active = activeId === s.id;
             return (
-              <article
+              <button
                 key={s.id}
-                className={styles.card}
-                style={{ animationDelay: `${Math.min(i, 5) * 40}ms` }}
+                type="button"
+                className={`${styles.card} ${active ? styles.active : ""}`}
+                style={{ animationDelay: `${Math.min(i, 6) * 30}ms` }}
+                onClick={() => dispatch({ type: "SET_ACTIVE_SCRIPT", id: s.id })}
               >
-                <div className={styles.row1}>
-                  <span className={styles.idx}>{String(i + 1).padStart(2, "0")}</span>
+                <span className={styles.idx}>{String(i + 1).padStart(2, "0")}</span>
+                <span className={styles.body}>
                   <span className={styles.title}>{s.title}</span>
-                  <span className={styles.dur}>{s.dur}s</span>
-                </div>
-                <div className={styles.hook}>{s.hook}</div>
-                <div className={styles.scenes}>
-                  {widths.map((w, k) => (
-                    <span
-                      key={k}
-                      className={`${styles.sceneBar} ${k === 0 ? styles.hl : ""}`}
-                    >
-                      <i style={{ width: `${w}%` }} />
+                  <span className={styles.row}>
+                    <span className={styles.dur}>{s.dur}s</span>
+                    <span>· {s.sceneCount} scenes</span>
+                    <span className={styles.scenesMini}>
+                      {Array.from({ length: Math.min(5, s.sceneCount) }).map((_, k) => (
+                        <i key={k} className={k === 0 ? styles.miniHl : ""} />
+                      ))}
                     </span>
-                  ))}
-                </div>
-                <div className={styles.tags}>
-                  {s.tags.map((t) => (
-                    <span key={t} className={styles.tag}>{t}</span>
-                  ))}
-                </div>
-              </article>
+                  </span>
+                </span>
+                <span className={styles.open}><Chev width={12} height={12} /></span>
+              </button>
             );
           })}
         </div>
