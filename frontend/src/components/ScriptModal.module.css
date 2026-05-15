@@ -1,0 +1,201 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: oklch(0.08 0.006 70 / 0.72);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  animation: bdIn 0.18s ease-out;
+}
+
+@keyframes bdIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.dialog {
+  position: relative;
+  width: 100%;
+  max-width: 620px;
+  max-height: min(80vh, 760px);
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, oklch(0.22 0.010 70 / 0.96), oklch(0.17 0.008 70 / 0.96));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  box-shadow:
+    0 20px 50px oklch(0 0 0 / 0.55),
+    0 0 0 1px oklch(0.88 0.19 128 / 0.10);
+  overflow: hidden;
+  animation: dlgIn 0.22s cubic-bezier(.2,0,.2,1);
+}
+
+@keyframes dlgIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--bg-3);
+  color: var(--fg-2);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  z-index: 2;
+}
+
+.close:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 56px 14px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.idx {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: oklch(0.30 0.04 130 / 0.5);
+  color: var(--accent);
+  font-family: "Geist Mono", monospace;
+  font-size: 13px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.headText {
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--fg);
+}
+
+.meta {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  color: var(--fg-3);
+}
+
+.dur { color: var(--accent); }
+
+.body {
+  padding: 16px 20px 20px;
+  overflow: auto;
+}
+
+.body::-webkit-scrollbar { width: 6px; }
+.body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+
+.sectionLabel {
+  font-family: "Geist Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+  margin: 14px 0 6px;
+}
+
+.sectionLabel:first-child {
+  margin-top: 0;
+}
+
+.hook {
+  background: oklch(0.30 0.04 130 / 0.12);
+  border: 1px solid oklch(0.88 0.19 128 / 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.hook .sectionLabel {
+  margin-top: 0;
+  color: var(--accent);
+}
+
+.hookText {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--fg);
+  line-height: 1.4;
+}
+
+.script {
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  font-family: "Geist Mono", monospace;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tags span {
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  border: 1px solid var(--line-2);
+  color: var(--fg-2);
+}
+
+@media (max-width: 600px) {
+  .backdrop {
+    padding: 12px;
+  }
+  .head {
+    padding: 14px 50px 12px 14px;
+  }
+  .body {
+    padding: 12px 14px 16px;
+  }
+  .title { font-size: 14px; }
+  .script { font-size: 12px; padding: 12px 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop { animation: none; }
+  .dialog { animation: none; }
+}

@@ -8,7 +8,6 @@ import ScopeCore from "./ScopeCore";
 import PostStack from "./PostStack";
 import ReelDeck from "./ReelDeck";
 import GlitchSweep from "./GlitchSweep";
-import StatsStrip from "./StatsStrip";
 import StageTrack from "./StageTrack";
 import styles from "./PipelinePanel.module.css";
 
@@ -43,11 +42,6 @@ export default function PipelinePanel() {
     ? 1
     : Math.min(1, state.totalPosts === 0 ? 0 : state.scrapedCount / state.totalPosts);
 
-  const queued = Math.max(0, state.totalPosts - state.scrapedCount);
-  const avgDur = state.scripts.length
-    ? Math.round(state.scripts.reduce((s, x) => s + x.dur, 0) / state.scripts.length)
-    : 0;
-
   return (
     <section className={styles.panel}>
       <div className={styles.head}>
@@ -73,14 +67,6 @@ export default function PipelinePanel() {
         />
         <GlitchSweep key={state.glitch} tick={state.glitch} />
       </div>
-
-      <StatsStrip
-        scraped={state.scrapedCount}
-        count={state.totalPosts || state.count}
-        queued={queued}
-        scripts={state.scripts.length}
-        avgDur={avgDur}
-      />
     </section>
   );
 }

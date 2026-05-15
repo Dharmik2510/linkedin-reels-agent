@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Reelify v2 — Saved → Reels</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: oklch(0.15 0.008 70);
+      --bg-2: oklch(0.19 0.010 70);
+      --bg-3: oklch(0.23 0.012 70);
+      --bg-4: oklch(0.27 0.013 70);
+      --line: oklch(0.30 0.012 70);
+      --line-2: oklch(0.38 0.012 70);
+      --fg: oklch(0.97 0.012 80);
+      --fg-2: oklch(0.78 0.010 80);
+      --fg-3: oklch(0.55 0.010 80);
+      --accent: oklch(0.88 0.19 128);
+      --accent-2: oklch(0.78 0.16 130);
+      --accent-deep: oklch(0.50 0.14 130);
+      --cyan: oklch(0.82 0.10 220);
+      --warn: oklch(0.82 0.15 70);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: 'Inter', system-ui, sans-serif; font-feature-settings: 'cv11','ss01'; }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(1100px 700px at 75% -15%, oklch(0.30 0.06 130 / 0.16), transparent 65%),
+        radial-gradient(900px 600px at -10% 115%, oklch(0.22 0.03 60 / 0.5), transparent 65%),
+        radial-gradient(500px 400px at 50% 50%, oklch(0.20 0.02 130 / 0.30), transparent 70%),
+        var(--bg);
+      overflow-x: hidden;
+    }
+    .mono { font-family: 'Geist Mono', ui-monospace, monospace; }
+    .app { max-width: 1480px; margin: 0 auto; padding: 22px 28px 28px; position: relative; }
+
+    /* Ambient drifting dust */
+    .dust {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    }
+    .dust span {
+      position: absolute; width: 2px; height: 2px; border-radius: 50%;
+      background: var(--accent); opacity: 0.5;
+      filter: blur(0.5px);
+      animation: drift linear infinite;
+    }
+    @keyframes drift {
+      from { transform: translate3d(0,0,0); }
+      to   { transform: translate3d(120px, -80px, 0); }
+    }
+
+    /* ---------- Header ---------- */
+    header.top {
+      position: relative; z-index: 2;
+      display: flex; align-items: center; gap: 18px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 36px; height: 36px; position: relative;
+      border-radius: 9px;
+      background: linear-gradient(140deg, var(--accent), var(--accent-deep));
+      display: grid; place-items: center;
+      box-shadow: 0 0 0 1px oklch(0.92 0.18 130 / 0.4), 0 6px 24px oklch(0.88 0.19 128 / 0.30);
+      overflow: hidden;
+    }
+    .brand-mark::after {
+      content: ""; position: absolute; inset: 0;
+      background: repeating-linear-gradient(90deg, transparent 0 3px, oklch(0 0 0 / 0.10) 3px 4px);
+      mix-blend-mode: overlay; opacity: 0.6;
+    }
+    .brand-mark::before {
+      content: ""; position: absolute; left: -50%; top: 0; bottom: 0; width: 30%;
+      background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.5), transparent);
+      transform: skewX(-20deg);
+      animation: sheen 4s ease-in-out infinite;
+    }
+    @keyframes sheen { 0%, 100% { left: -50%; } 50% { left: 130%; } }
+    .brand-mark svg { width: 18px; height: 18px; color: oklch(0.18 0.02 130); position: relative; z-index: 1; }
+    .brand-name { font-weight: 700; letter-spacing: -0.01em; font-size: 19px; }
+    .brand-sub { color: var(--fg-3); font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase; font-family: 'Geist Mono', monospace; }
+    .top-spacer { flex: 1; }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 7px 14px; border-radius: 999px;
+      border: 1px solid var(--line-2);
+      background: oklch(0.20 0.010 70 / 0.6);
+      backdrop-filter: blur(8px);
+      font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--fg-2);
+    }
+    .status-pill .sep { width: 1px; height: 12px; background: var(--line-2); }
+    .status-pill .timer { color: var(--fg); font-variant-numeric: tabular-nums; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--fg-3);
+    }
+    .status-dot.live { background: var(--accent); color: var(--accent); animation: ping 1.6s ease-out infinite; }
+    .status-dot.done { background: var(--accent-deep); }
+    @keyframes ping {
+      0% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+      80% { box-shadow: 0 0 0 8px transparent; opacity: 0.6; }
+      100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
+    }
+
+    .icon-btn {
+      width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid var(--line-2); background: oklch(0.20 0.010 70 / 0.6);
+      backdrop-filter: blur(8px);
+      display: grid; place-items: center; color: var(--fg-2);
+      cursor: pointer;
+    }
+    .icon-btn:hover { color: var(--fg); border-color: var(--accent); }
+
+    /* ---------- Grid layout ---------- */
+    .grid {
+      position: relative; z-index: 1;
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: 308px minmax(0, 1fr) 408px;
+      gap: 18px;
+      align-items: stretch;
+    }
+    .term-strip { margin-top: 18px; }
+
+    @media (max-width: 1240px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background:
+        linear-gradient(180deg, oklch(0.21 0.010 70 / 0.85), oklch(0.17 0.008 70 / 0.85));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      position: relative;
+      backdrop-filter: blur(6px);
+    }
+    .panel-title {
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-3);
+      margin-bottom: 14px;
+    }
+    .panel-title .num {
+      width: 18px; height: 18px; border-radius: 4px;
+      display: inline-grid; place-items: center;
+      background: var(--bg-3); color: var(--fg-2);
+      font-size: 10px; margin-right: 6px;
+    }
+
+    /* ---------- Config panel ---------- */
+    .config-row { margin-bottom: 16px; }
+    .config-label { font-size: 11px; color: var(--fg-3); margin-bottom: 6px; font-family: 'Geist Mono', monospace; letter-spacing: 0.05em; }
+    .config-source {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px; background: var(--bg-3); border: 1px solid var(--line-2);
+      border-radius: 10px;
+      position: relative; overflow: hidden;
+    }
+    .config-source::after {
+      content: ""; position: absolute; left: -100%; top: 0; bottom: 0; width: 100%;
+      background: linear-gradient(90deg, transparent, oklch(0.88 0.19 128 / 0.10), transparent);
+      animation: scan 3.5s linear infinite;
+    }
+    @keyframes scan { to { left: 100%; } }
+    .source-ico {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: oklch(0.30 0.015 70); display: grid; place-items: center; color: var(--accent);
+      border: 1px solid var(--line-2);
+    }
+    .source-name { font-weight: 600; font-size: 14px; }
+    .source-meta { font-size: 11px; color: var(--fg-3); font-family: 'Geist Mono', monospace; }
+
+    /* Custom dropdown */
+    .dd { position: relative; }
+    .dd-trigger {
+      width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-radius: 10px;
+      background: var(--bg-3); border: 1px solid var(--line-2);
+      color: var(--fg); font-size: 14px; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.15s ease;
+    }
+    .dd-trigger:hover { border-color: var(--accent); }
+    .dd-trigger:disabled { opacity: 0.5; cursor: not-allowed; }
+    .dd-trigger .chev { transition: transform 0.18s ease; color: var(--fg-3); }
+    .dd.open .dd-trigger .chev { transform: rotate(180deg); }
+    .dd-value { display: flex; align-items: baseline; gap: 8px; }
+    .dd-value .v { font-family: 'Geist Mono', monospace; font-weight: 600; font-size: 16px; }
+    .dd-value .u { color: var(--fg-3); font-size: 12px; font-family: 'Geist Mono', monospace; }
+    .dd-menu {
+      position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+      background: oklch(0.22 0.010 70);
+      border: 1px solid var(--line-2);
+      border-radius: 10px;
+      padding: 6px;
+      box-shadow: 0 16px 40px oklch(0 0 0 / 0.5);
+      z-index: 30;
+      max-height: 240px; overflow: auto;
+      display: none;
+    }
+    .dd.open .dd-menu { display: block; }
+    .dd-opt {
+      padding: 8px 10px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: 'Geist Mono', monospace; font-size: 13px;
+      cursor: pointer; color: var(--fg-2);
+    }
+    .dd-opt:hover { background: var(--bg-3); color: var(--fg); }
+    .dd-opt.sel { color: var(--accent); }
+    .dd-opt .est { font-size: 11px; color: var(--fg-3); }
+
+    .tone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .tone-chip {
+      padding: 8px 10px; border-radius: 8px;
+      background: var(--bg-3); border: 1px solid var(--line-2);
+      font-size: 12px; font-family: 'Geist Mono', monospace; color: var(--fg-2);
+      cursor: pointer; text-align: center;
+      transition: all 0.12s ease;
+    }
+    .tone-chip:hover { color: var(--fg); }
+    .tone-chip.sel {
+      background: oklch(0.30 0.05 130 / 0.4);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .run-btn {
+      width: 100%; margin-top: 6px;
+      padding: 14px; border-radius: 10px;
+      background: var(--accent); color: oklch(0.18 0.03 130);
+      font-weight: 700; font-size: 14px; letter-spacing: 0.02em;
+      border: 0; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      box-shadow: 0 0 0 0 var(--accent);
+      transition: box-shadow 0.2s ease, transform 0.06s ease;
+      position: relative; overflow: hidden;
+    }
+    .run-btn:hover { box-shadow: 0 0 0 4px oklch(0.88 0.19 128 / 0.18); }
+    .run-btn:active { transform: translateY(1px); }
+    .run-btn::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.25), transparent);
+      transform: translateX(-100%);
+    }
+    .run-btn:hover::after { animation: btnSheen 0.9s ease-out; }
+    @keyframes btnSheen { to { transform: translateX(100%); } }
+    .run-btn .spin {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid currentColor; border-right-color: transparent;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .quota {
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px dashed var(--line-2);
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .quota-cell .k { font-family: 'Geist Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-3); }
+    .quota-cell .v { font-family: 'Geist Mono', monospace; font-size: 18px; font-weight: 600; color: var(--fg); margin-top: 2px; }
+    .quota-bar { margin-top: 6px; height: 4px; background: var(--bg-3); border-radius: 2px; overflow: hidden; }
+    .quota-bar > i { display: block; height: 100%; background: var(--accent); }
+
+    /* ---------- Pipeline center panel ---------- */
+    .pipe { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+    .pipe-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--line);
+    }
+    .pipe-title { font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-3); display: flex; align-items: center; }
+    .stage-track {
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Geist Mono', monospace; font-size: 11px;
+    }
+    .stage-dot { display: flex; align-items: center; gap: 6px; color: var(--fg-3); }
+    .stage-dot i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); }
+    .stage-dot.active { color: var(--fg); }
+    .stage-dot.active i { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .stage-dot.done { color: var(--fg-2); }
+    .stage-dot.done i { background: var(--accent-deep); }
+    .stage-sep { width: 14px; height: 1px; background: var(--line-2); }
+
+    /* Pipe body — the cinematic stage */
+    .pipe-body {
+      position: relative;
+      height: 540px;
+      flex: 0 0 540px;
+      overflow: hidden;
+    }
+    .pipe-svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    .pipe-svg .hex {
+      fill: oklch(0.21 0.010 70 / 0.55);
+      stroke: oklch(0.34 0.012 70 / 0.7);
+      stroke-width: 0.6;
+      transition: fill 0.6s ease, stroke 0.6s ease;
+    }
+    .pipe-svg .hex.lit {
+      fill: oklch(0.55 0.16 130 / 0.18);
+      stroke: oklch(0.88 0.19 128 / 0.55);
+      transition: fill 0.05s, stroke 0.05s;
+    }
+    .pipe-svg path.lane {
+      fill: none; stroke: oklch(0.34 0.018 70 / 0.6);
+      stroke-width: 1; stroke-dasharray: 3 5;
+    }
+    .pipe-svg path.lane.hot {
+      stroke: oklch(0.88 0.19 128 / 0.6);
+      stroke-width: 1.2;
+      stroke-dasharray: 5 7;
+      animation: laneFlow 1.4s linear infinite;
+      filter: drop-shadow(0 0 3px oklch(0.88 0.19 128 / 0.5));
+    }
+    @keyframes laneFlow { to { stroke-dashoffset: -24; } }
+
+    /* Comets */
+    .comet {
+      position: absolute; top: 0; left: 0;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      will-change: transform, opacity;
+      transition: opacity 0.25s ease;
+    }
+    .comet .core-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent), 0 0 24px oklch(0.88 0.19 128 / 0.5);
+      position: relative;
+    }
+    .comet .label {
+      position: absolute; left: 14px; top: -5px;
+      font-family: 'Geist Mono', monospace; font-size: 10px;
+      padding: 2px 6px;
+      background: oklch(0.20 0.010 70 / 0.85);
+      border: 1px solid oklch(0.88 0.19 128 / 0.4);
+      border-radius: 4px;
+      color: var(--accent);
+      white-space: nowrap;
+      backdrop-filter: blur(4px);
+    }
+    .comet .trail {
+      position: absolute; right: 6px; top: 3px;
+      width: 26px; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent));
+      filter: blur(0.5px);
+      transform-origin: right center;
+    }
+
+    /* 3D post stack (left of pipe) */
+    .stack-col {
+      position: absolute; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
+      width: 200px; perspective: 800px;
+      z-index: 2;
+    }
+    .stack-col.left { left: 20px; }
+    .stack-col.right { right: 20px; }
+    .stack-label {
+      position: absolute; top: 16px; left: 0; right: 0;
+      font-family: 'Geist Mono', monospace; font-size: 10px;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-3);
+      text-align: center;
+    }
+    .stack-counter {
+      position: absolute; bottom: 16px; left: 0; right: 0;
+      text-align: center;
+      font-family: 'Geist Mono', monospace;
+    }
+    .stack-counter .v { font-size: 26px; font-weight: 600; color: var(--fg); font-variant-numeric: tabular-nums; }
+    .stack-counter .k { font-size: 10px; color: var(--fg-3); letter-spacing: 0.16em; text-transform: uppercase; }
+
+    .stack {
+      position: relative; width: 150px; height: 200px;
+      transform-style: preserve-3d;
+      transform: rotateY(-15deg) rotateX(8deg);
+    }
+    .stack-col.right .stack { transform: rotateY(15deg) rotateX(8deg); }
+    .stack-card {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, var(--bg-3), oklch(0.20 0.010 70));
+      border: 1px solid var(--line-2);
+      border-radius: 10px;
+      box-shadow: 0 6px 20px oklch(0 0 0 / 0.4);
+      padding: 12px;
+      display: flex; flex-direction: column; gap: 8px;
+      transition: transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.4s ease;
+    }
+    .stack-card .av {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, oklch(0.60 0.10 var(--h, 60)), oklch(0.40 0.06 var(--h, 60)));
+      border: 1px solid var(--line-2);
+    }
+    .stack-card .row { display: flex; gap: 8px; align-items: center; }
+    .stack-card .lines i {
+      display: block; height: 5px; background: var(--bg-4); border-radius: 3px;
+      margin-bottom: 5px;
+    }
+    .stack-card .lines i:nth-child(1) { width: 88%; }
+    .stack-card .lines i:nth-child(2) { width: 60%; }
+    .stack-card .lines i:nth-child(3) { width: 78%; }
+    .stack-card .lines i:nth-child(4) { width: 40%; }
+    .stack-card .badge {
+      margin-top: auto; align-self: flex-start;
+      font-family: 'Geist Mono', monospace; font-size: 9px;
+      padding: 2px 5px; border-radius: 3px;
+      background: var(--bg-4); color: var(--fg-3); letter-spacing: 0.05em;
+    }
+
+    /* Reel deck on right — film canister look */
+    .reel-stack-card {
+      position: absolute; inset: 0;
+      background: linear-gradient(160deg, oklch(0.32 0.10 var(--h, 130)), oklch(0.18 0.04 var(--h, 130)));
+      border: 1px solid oklch(0.5 0.10 var(--h, 130) / 0.6);
+      border-radius: 10px;
+      box-shadow: 0 6px 20px oklch(0 0 0 / 0.5);
+      padding: 10px;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.4s ease;
+    }
+    .reel-stack-card::before {
+      content: ""; position: absolute; inset: 8px; border-radius: 8px;
+      border: 1px dashed oklch(1 0 0 / 0.15);
+      pointer-events: none;
+    }
+    .reel-stack-card .sprocket {
+      display: flex; gap: 4px; margin-bottom: 6px;
+    }
+    .reel-stack-card .sprocket span {
+      flex: 1; height: 4px; background: oklch(0 0 0 / 0.35); border-radius: 1px;
+    }
+    .reel-stack-card .title { font-size: 11px; font-weight: 700; color: oklch(1 0 0 / 0.92); line-height: 1.2; }
+    .reel-stack-card .meta { font-family: 'Geist Mono', monospace; font-size: 9px; color: oklch(1 0 0 / 0.7); margin-top: 4px; }
+    .reel-stack-card .play {
+      position: absolute; right: 10px; bottom: 10px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: oklch(1 0 0 / 0.9); display: grid; place-items: center;
+      color: oklch(0.2 0.06 var(--h, 130));
+    }
+
+    /* New reel arrival flash */
+    .reel-stack-card.fresh {
+      animation: reelFresh 0.9s ease-out;
+    }
+    @keyframes reelFresh {
+      0% { transform: var(--rb-tx) translateY(-30px); opacity: 0; filter: brightness(2); }
+      30% { filter: brightness(1.5); }
+      100% { opacity: 1; filter: brightness(1); }
+    }
+
+    /* Oscilloscope core */
+    .core-zone {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: 340px; height: 220px;
+      z-index: 1;
+    }
+    .scope {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at center, oklch(0.20 0.03 130 / 0.7), oklch(0.16 0.010 70 / 0.2) 70%);
+      border: 1px solid oklch(0.88 0.19 128 / 0.3);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px oklch(0.88 0.19 128 / 0.12), 0 30px 60px oklch(0.88 0.19 128 / 0.18), inset 0 0 60px oklch(0 0 0 / 0.5);
+    }
+    .scope .gridlines {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(oklch(0.88 0.19 128 / 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, oklch(0.88 0.19 128 / 0.08) 1px, transparent 1px);
+      background-size: 20px 20px;
+      opacity: 0.6;
+    }
+    .scope svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .scope-progress {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+      background: oklch(0 0 0 / 0.4);
+    }
+    .scope-progress > i {
+      display: block; height: 100%;
+      background: linear-gradient(90deg, var(--accent-deep), var(--accent));
+      box-shadow: 0 0 12px var(--accent);
+      transition: width 0.4s ease;
+    }
+    .scope-label {
+      position: absolute; top: 10px; left: 14px;
+      font-family: 'Geist Mono', monospace; font-size: 10px;
+      color: var(--accent); letter-spacing: 0.16em;
+      text-shadow: 0 0 8px oklch(0.88 0.19 128 / 0.5);
+    }
+    .scope-label .dot {
+      display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); margin-right: 6px; vertical-align: 1px;
+      animation: ping 1.6s ease-out infinite;
+    }
+    .scope-readout {
+      position: absolute; right: 14px; top: 10px;
+      font-family: 'Geist Mono', monospace; font-size: 10px;
+      color: var(--fg-2); letter-spacing: 0.06em;
+      text-align: right;
+    }
+    .scope-stage {
+      position: absolute; left: 14px; bottom: 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 28px; font-weight: 800; letter-spacing: -0.02em;
+      color: var(--fg);
+      line-height: 1;
+    }
+    .scope-stage small {
+      display: block; font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 500;
+      color: var(--fg-3); letter-spacing: 0.16em; text-transform: uppercase; margin-top: 6px;
+    }
+
+    /* Glitch sweep for stage transitions */
+    .glitch-sweep {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        linear-gradient(180deg,
+          transparent 30%,
+          oklch(0.88 0.19 128 / 0.05) 48%,
+          oklch(0.88 0.19 128 / 0.25) 50%,
+          oklch(0.88 0.19 128 / 0.05) 52%,
+          transparent 70%);
+      opacity: 0; z-index: 5;
+    }
+    .glitch-sweep.go { animation: gsweep 0.7s ease-out; }
+    @keyframes gsweep {
+      0% { transform: translateY(-100%); opacity: 0; }
+      30% { opacity: 1; }
+      100% { transform: translateY(100%); opacity: 0; }
+    }
+
+    /* Stats strip */
+    .pipe-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--line);
+    }
+    .stat {
+      padding: 14px 18px;
+      border-right: 1px solid var(--line);
+      position: relative;
+    }
+    .stat:last-child { border-right: 0; }
+    .stat .k { font-family: 'Geist Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-3); }
+    .stat .v {
+      font-family: 'Geist Mono', monospace; font-size: 24px; font-weight: 600; color: var(--fg);
+      margin-top: 4px; display: flex; align-items: baseline; gap: 4px;
+      line-height: 1;
+    }
+    .stat .v small { font-size: 11px; color: var(--fg-3); font-weight: 400; }
+
+    /* Slot machine digit */
+    .digit {
+      display: inline-block; width: 14px; height: 28px;
+      overflow: hidden; vertical-align: top;
+    }
+    .digit > i {
+      display: block;
+      font-style: normal;
+      line-height: 28px;
+      text-align: center;
+      transition: transform 0.5s cubic-bezier(.4,0,.2,1);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- Right column (phone + scripts) ---------- */
+    .right-col { display: flex; flex-direction: column; gap: 18px; }
+
+    /* Phone preview */
+    .phone-panel { padding: 0; overflow: hidden; }
+    .phone-head {
+      padding: 14px 18px; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-3);
+    }
+    .phone-stage {
+      padding: 22px 18px;
+      display: grid; grid-template-columns: 180px 1fr; gap: 18px; align-items: center;
+      background:
+        radial-gradient(300px 200px at 20% 50%, oklch(0.30 0.06 var(--ph, 130) / 0.18), transparent 70%);
+    }
+    .phone {
+      position: relative; width: 180px; height: 320px;
+      border-radius: 28px;
+      padding: 6px;
+      background: linear-gradient(160deg, var(--bg-4), var(--bg-2));
+      border: 1px solid var(--line-2);
+      box-shadow: 0 20px 50px oklch(0 0 0 / 0.5), inset 0 0 0 1px oklch(1 0 0 / 0.04);
+    }
+    .phone-screen {
+      position: relative; inset: 0; width: 100%; height: 100%;
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 30% 20%, oklch(0.55 0.18 var(--ph, 130) / 0.5), transparent 70%),
+        linear-gradient(170deg, oklch(0.35 0.10 var(--ph, 130)), oklch(0.20 0.04 var(--ph, 130)));
+      overflow: hidden;
+      transition: background 0.6s ease;
+    }
+    .phone-notch {
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      width: 56px; height: 14px; background: oklch(0 0 0 / 0.7); border-radius: 7px;
+      z-index: 3;
+    }
+    .phone-ui {
+      position: absolute; inset: 0; padding: 28px 14px 14px;
+      display: flex; flex-direction: column;
+      color: oklch(1 0 0 / 0.96);
+    }
+    .phone-author {
+      font-family: 'Geist Mono', monospace; font-size: 9px;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: oklch(1 0 0 / 0.7);
+    }
+    .phone-hook {
+      margin-top: auto; margin-bottom: 12px;
+      font-weight: 800; font-size: 19px; line-height: 1.15;
+      letter-spacing: -0.01em;
+      text-shadow: 0 2px 12px oklch(0 0 0 / 0.4);
+    }
+    .phone-hook .kbox {
+      display: inline-block; padding: 0 4px;
+      background: oklch(0 0 0 / 0.4);
+      border-radius: 3px;
+    }
+    .phone-cta {
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'Geist Mono', monospace; font-size: 10px;
+      color: oklch(1 0 0 / 0.85);
+      letter-spacing: 0.05em;
+    }
+    .phone-cta i {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: oklch(1 0 0 / 0.95);
+      display: inline-block;
+    }
+    .phone-scenes {
+      position: absolute; left: 14px; right: 14px; bottom: 6px;
+      display: flex; gap: 3px; z-index: 4;
+    }
+    .phone-scenes i {
+      flex: 1; height: 2px; background: oklch(1 0 0 / 0.25); border-radius: 1px; overflow: hidden;
+    }
+    .phone-scenes i.done { background: oklch(1 0 0 / 0.9); }
+    .phone-scenes i.now b {
+      display: block; height: 100%; background: oklch(1 0 0 / 0.9);
+      animation: sceneFill var(--scene-dur, 1.5s) linear forwards;
+    }
+    @keyframes sceneFill { from { width: 0; } to { width: 100%; } }
+
+    .phone-particles {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+    .phone-particles span {
+      position: absolute; width: 3px; height: 3px; border-radius: 50%;
+      background: oklch(1 0 0 / 0.9); opacity: 0;
+      animation: phonePart 2.2s ease-out infinite;
+    }
+    @keyframes phonePart {
+      0% { transform: translate(var(--x, 0), 0) scale(0.5); opacity: 0; }
+      20% { opacity: 0.9; }
+      100% { transform: translate(var(--x, 0), -200px) scale(1.2); opacity: 0; }
+    }
+
+    .phone-meta {
+      display: flex; flex-direction: column; gap: 14px;
+      min-width: 0;
+    }
+    .phone-meta-row .k {
+      font-family: 'Geist Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--fg-3); margin-bottom: 4px;
+    }
+    .phone-meta-row .v { font-size: 14px; font-weight: 600; color: var(--fg); line-height: 1.3; }
+    .phone-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .phone-tags span {
+      font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--fg-2);
+      padding: 2px 6px; border: 1px solid var(--line-2); border-radius: 4px;
+      background: oklch(0.20 0.010 70 / 0.6);
+    }
+    .phone-empty {
+      grid-column: 1 / -1;
+      text-align: center; padding: 36px 18px;
+      color: var(--fg-3); font-size: 13px;
+    }
+    .phone-empty .big { font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-2); margin-bottom: 6px; }
+
+    /* Scripts panel — compact */
+    .scripts-panel {
+      flex: 1;
+      display: flex; flex-direction: column;
+      min-height: 0;
+    }
+    .scripts-list {
+      display: flex; flex-direction: column; gap: 8px;
+      overflow: auto;
+      max-height: 290px;
+      padding-right: 4px;
+    }
+    .scripts-list::-webkit-scrollbar { width: 6px; }
+    .scripts-list::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+
+    .script-card {
+      background: var(--bg-3); border: 1px solid var(--line-2); border-radius: 10px;
+      padding: 10px 12px;
+      display: flex; gap: 10px; align-items: center;
+      opacity: 0; transform: translateX(20px);
+      animation: scriptIn 0.5s cubic-bezier(.3,0,.2,1) forwards;
+    }
+    @keyframes scriptIn { to { opacity: 1; transform: translateX(0); } }
+    .script-card .idx {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: oklch(0.30 0.04 130 / 0.5);
+      color: var(--accent); font-family: 'Geist Mono', monospace; font-size: 11px;
+      display: grid; place-items: center; font-weight: 600; flex-shrink: 0;
+    }
+    .script-card .body { min-width: 0; flex: 1; }
+    .script-card .title { font-size: 12px; font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .script-card .row {
+      margin-top: 4px;
+      display: flex; gap: 8px; align-items: center;
+      font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--fg-3);
+    }
+    .script-card .row .dur { color: var(--accent); }
+    .script-card .row .scenes-mini {
+      display: inline-flex; gap: 1px; margin-left: auto;
+    }
+    .script-card .row .scenes-mini i {
+      width: 5px; height: 6px; background: var(--accent-deep); border-radius: 1px;
+    }
+    .script-card .row .scenes-mini i:first-child { background: var(--accent); }
+    .script-card .open {
+      width: 24px; height: 24px; border-radius: 6px;
+      background: var(--bg-4); border: 1px solid var(--line-2); color: var(--fg-2);
+      display: grid; place-items: center; cursor: pointer; flex-shrink: 0;
+    }
+    .script-card.active { border-color: var(--accent); background: oklch(0.30 0.04 130 / 0.18); }
+
+    .empty-state {
+      padding: 26px 12px; text-align: center;
+      color: var(--fg-3); font-size: 12px;
+    }
+    .empty-state .big { font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-2); margin-bottom: 6px; }
+
+    /* Terminal strip */
+    .terminal {
+      height: 180px;
+      padding: 0; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .terminal-head {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--line);
+      font-family: 'Geist Mono', monospace; font-size: 10px;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-3);
+    }
+    .term-dots { display: flex; gap: 4px; margin-right: 8px; }
+    .term-dots i { width: 8px; height: 8px; border-radius: 50%; }
+    .term-dots i:nth-child(1) { background: oklch(0.65 0.18 25); }
+    .term-dots i:nth-child(2) { background: oklch(0.78 0.14 80); }
+    .term-dots i:nth-child(3) { background: oklch(0.70 0.15 145); }
+    .terminal-body {
+      flex: 1; overflow: auto;
+      padding: 10px 16px;
+      font-family: 'Geist Mono', monospace; font-size: 11px;
+      line-height: 1.55;
+      color: var(--fg-2);
+      columns: 2;
+      column-gap: 32px;
+      column-rule: 1px solid var(--line);
+    }
+    .terminal-body::-webkit-scrollbar { width: 6px; }
+    .terminal-body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+    .log-line { display: flex; gap: 8px; opacity: 0; animation: logIn 0.2s ease forwards; break-inside: avoid; margin-bottom: 1px; }
+    @keyframes logIn { to { opacity: 1; } }
+    .log-line .t { color: var(--fg-3); flex-shrink: 0; }
+    .log-line .tag { flex-shrink: 0; min-width: 56px; color: var(--fg-3); }
+    .log-line.info .tag { color: var(--cyan); }
+    .log-line.ok   .tag { color: var(--accent); }
+    .log-line.warn .tag { color: var(--warn); }
+    .log-line .msg { color: var(--fg); min-width: 0; }
+    .log-line .msg em { color: var(--fg-3); font-style: normal; }
+    .cursor {
+      display: inline-block; width: 7px; height: 12px;
+      background: var(--accent); vertical-align: -2px;
+      animation: blink 1s steps(2) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
+</head>
+<body>
+  <div class="dust" id="dust"></div>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script>
+    // Ambient drifting dust (vanilla JS, not React state)
+    (function buildDust() {
+      const host = document.getElementById('dust');
+      const N = 40;
+      for (let i = 0; i < N; i++) {
+        const d = document.createElement('span');
+        d.style.left = (Math.random() * 100) + 'vw';
+        d.style.top  = (Math.random() * 100) + 'vh';
+        d.style.opacity = (0.15 + Math.random() * 0.5).toFixed(2);
+        d.style.animationDuration = (8 + Math.random() * 18).toFixed(1) + 's';
+        d.style.animationDelay = (-Math.random() * 12).toFixed(1) + 's';
+        d.style.background = Math.random() < 0.6 ? 'oklch(0.88 0.19 128)' : 'oklch(0.78 0.10 80)';
+        host.appendChild(d);
+      }
+    })();
+  </script>
+
+  <script type="text/babel" src="v2-shared.babel.js" data-presets="env,react"></script>
+  <script type="text/babel" src="v2-stage.babel.js" data-presets="env,react"></script>
+  <script type="text/babel" src="v2-sidebar.babel.js" data-presets="env,react"></script>
+  <script type="text/babel" src="v2-app.babel.js" data-presets="env,react"></script>
+</body>
+</html>

@@ -9,7 +9,7 @@ export default function ScriptsPanel() {
     () => ({ scripts: state.scripts, activeScriptId: state.activeScriptId }),
     [state.scripts, state.activeScriptId],
   );
-  const activeId = view.activeScriptId ?? view.scripts[0]?.id ?? null;
+  const activeId = view.activeScriptId;
 
   return (
     <section className={styles.panel}>

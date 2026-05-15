@@ -80,19 +80,6 @@ export default function ConfigurePanel() {
           ? <><span className={styles.spinner} /> Stop run</>
           : <><Spark /> {view.stage === "done" ? "Run again" : "Run pipeline"}</>}
       </button>
-
-      <div className={styles.quotas} aria-hidden="true">
-        <div>
-          <div className={styles.quotaLabel}>Credits</div>
-          <div className={styles.quotaValue}>214</div>
-          <div className={styles.bar}><div className={styles.barFill} style={{ width: "62%" }} /></div>
-        </div>
-        <div>
-          <div className={styles.quotaLabel}>Storage</div>
-          <div className={styles.quotaValue}>1.4gb</div>
-          <div className={styles.bar}><div className={styles.barFill} style={{ width: "28%" }} /></div>
-        </div>
-      </div>
     </section>
   );
 }

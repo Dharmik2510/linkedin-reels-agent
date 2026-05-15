@@ -451,24 +451,6 @@
   .body :global(.reel-stack-card.fresh) { animation: none; }
 }
 
-/* slot counter */
-.body :global(.digit) {
-  display: inline-block;
-  width: 14px;
-  height: 28px;
-  overflow: hidden;
-  vertical-align: top;
-}
-
-.body :global(.digit > i) {
-  display: block;
-  font-style: normal;
-  line-height: 28px;
-  text-align: center;
-  transition: transform 0.5s cubic-bezier(.4,0,.2,1);
-  font-variant-numeric: tabular-nums;
-}
-
 /* stage track */
 .head :global(.stage-track) {
   display: flex;
@@ -505,46 +487,6 @@
   width: 14px;
   height: 1px;
   background: var(--line-2);
-}
-
-/* stats strip */
-.pipeStats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-top: 1px solid var(--line);
-}
-
-.pipeStats :global(.stat) {
-  padding: 14px 18px;
-  border-right: 1px solid var(--line);
-}
-
-.pipeStats :global(.stat:last-child) { border-right: 0; }
-
-.pipeStats :global(.stat .k) {
-  font-family: "Geist Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--fg-3);
-}
-
-.pipeStats :global(.stat .v) {
-  font-family: "Geist Mono", monospace;
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--fg);
-  margin-top: 4px;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  line-height: 1;
-}
-
-.pipeStats :global(.stat .v small) {
-  font-size: 11px;
-  color: var(--fg-3);
-  font-weight: 400;
 }
 
 /* glitch sweep */
