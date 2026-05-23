@@ -50,13 +50,23 @@ def _parse_script(raw: str) -> ReelsScript:
     return ReelsScript(**json.loads(text))
 
 
-async def run(post: Post, post_index: int, tone: Tone = "Punchy") -> ReelsScript | None:
+async def run(
+    post: Post,
+    post_index: int,
+    tone: Tone = "Punchy",
+    *,
+    regenerate: bool = False,
+) -> ReelsScript | None:
     now = datetime.now(timezone.utc).isoformat()
+    gen_payload: dict = {"post_index": post_index, "tone": tone}
+    if regenerate:
+        gen_payload["regenerate"] = True
+    verb = "Regenerating" if regenerate else "Generating"
     await push({
         "type": "content_generating",
         "agent": "content",
-        "message": f"Generating Reels script for post {post_index + 1} (tone={tone})",
-        "payload": {"post_index": post_index, "tone": tone},
+        "message": f"{verb} Reels script for post {post_index + 1} (tone={tone})",
+        "payload": gen_payload,
         "timestamp": now,
     })
     try:
@@ -72,20 +82,33 @@ async def run(post: Post, post_index: int, tone: Tone = "Punchy") -> ReelsScript
             messages=[{"role": "user", "content": post.text_content}],
         )
         script = _parse_script(response.content[0].text)
+        ready_payload: dict = {
+            "post_index": post_index,
+            "script": script.model_dump(),
+            "post": {
+                "author": post.author,
+                "post_url": post.post_url,
+            },
+        }
+        if regenerate:
+            ready_payload["regenerate"] = True
         await push({
             "type": "content_ready",
             "agent": "content",
             "message": f"Script ready for post {post_index + 1}",
-            "payload": {"post_index": post_index, "script": script.model_dump()},
+            "payload": ready_payload,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         })
         return script
     except Exception as exc:
+        err_payload: dict = {"post_index": post_index, "post_url": post.post_url}
+        if regenerate:
+            err_payload["regenerate"] = True
         await push({
             "type": "content_error",
             "agent": "content",
             "message": f"Failed to generate script for post {post_index + 1}: {exc}",
-            "payload": {"post_index": post_index, "post_url": post.post_url},
+            "payload": err_payload,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         })
         return None

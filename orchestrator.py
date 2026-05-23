@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from agents import content, scraper
 from events import push
 from models import Tone
+import run_cache
 
 
 async def run(num_posts: int, tone: Tone = "Punchy") -> None:
@@ -38,8 +39,10 @@ async def run(num_posts: int, tone: Tone = "Punchy") -> None:
             "timestamp": now(),
         })
         await stage("idle")
+        run_cache.clear()
         return
 
+    run_cache.set_run(posts, tone)
     await stage("generating")
 
     semaphore = asyncio.Semaphore(3)
@@ -73,3 +76,12 @@ async def run(num_posts: int, tone: Tone = "Punchy") -> None:
         },
         "timestamp": now(),
     })
+
+
+async def regenerate(post_index: int, tone: Tone | None = None) -> bool:
+    post = run_cache.get_post(post_index)
+    if post is None:
+        return False
+    effective_tone = tone if tone is not None else run_cache.last_tone()
+    await content.run(post, post_index, tone=effective_tone, regenerate=True)
+    return True

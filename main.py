@@ -15,10 +15,12 @@ import config  # noqa: F401 — validates env vars at import time
 from events import hub, push
 from models import Tone
 import orchestrator
+import run_cache
 
 app = FastAPI(title="LinkedIn Reels Agent")
 
 _current_task: asyncio.Task | None = None
+_regenerate_task: asyncio.Task | None = None
 
 _DEFAULT_DIST = Path(__file__).parent / "frontend" / "dist"
 _FRONTEND_DIST = Path(os.getenv("REELIFY_FRONTEND_DIST", _DEFAULT_DIST))
@@ -62,6 +64,10 @@ class RunRequest(BaseModel):
     tone: Tone = Field(default="Punchy")
 
 
+class RegenerateRequest(BaseModel):
+    tone: Tone | None = None
+
+
 @app.post("/run")
 async def run_pipeline(request: RunRequest) -> JSONResponse:
     global _current_task
@@ -90,6 +96,34 @@ async def run_pipeline(request: RunRequest) -> JSONResponse:
         "num_posts": request.num_posts,
         "tone": request.tone,
     })
+
+
+@app.post("/regenerate/{post_index}")
+async def regenerate_script(
+    post_index: int,
+    request: RegenerateRequest = RegenerateRequest(),
+) -> JSONResponse:
+    global _regenerate_task
+    if post_index < 0:
+        return JSONResponse({"status": "invalid_index"}, status_code=422)
+    if _current_task is not None and not _current_task.done():
+        return JSONResponse({"status": "pipeline_running"}, status_code=409)
+    if run_cache.get_post(post_index) is None:
+        return JSONResponse({"status": "not_found"}, status_code=404)
+    if _regenerate_task is not None and not _regenerate_task.done():
+        return JSONResponse({"status": "regenerate_busy"}, status_code=409)
+
+    tone = request.tone
+
+    async def run_regenerate() -> None:
+        try:
+            await orchestrator.regenerate(post_index, tone)
+        finally:
+            global _regenerate_task
+            _regenerate_task = None
+
+    _regenerate_task = asyncio.create_task(run_regenerate())
+    return JSONResponse({"status": "started", "post_index": post_index})
 
 
 @app.post("/stop")

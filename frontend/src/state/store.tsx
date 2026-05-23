@@ -7,6 +7,11 @@ import { usePipelineEngine } from "../hooks/usePipelineEngine";
 import type {
   Comet, LogLine, Post, RawEvent, Script, Stage, Tone,
 } from "../types";
+import {
+  applyScriptEdits,
+  buildScriptFromApi,
+  type ScriptEditableFields,
+} from "../utils/scriptFields";
 
 interface RunState {
   count: number;
@@ -26,6 +31,7 @@ interface RunState {
   elapsedStart: number | null;
   glitch: number;
   activeScriptId: string | null;
+  regeneratingPostIndex: number | null;
 }
 
 export type Action =
@@ -35,7 +41,10 @@ export type Action =
   | { type: "EVENT"; ev: RawEvent }
   | { type: "STREAM_ERROR" }
   | { type: "COMET_FRAME"; ticks: { id: number; t: number }[]; landed: number[]; intensityBump: boolean }
-  | { type: "SET_ACTIVE_SCRIPT"; id: string | null };
+  | { type: "SET_ACTIVE_SCRIPT"; id: string | null }
+  | { type: "UPDATE_SCRIPT"; id: string; fields: ScriptEditableFields }
+  | { type: "REGENERATE_START"; postIndex: number }
+  | { type: "REGENERATE_END"; postIndex: number };
 
 const initial: RunState = {
   count: 10,
@@ -53,6 +62,7 @@ const initial: RunState = {
   elapsedStart: null,
   glitch: 0,
   activeScriptId: null,
+  regeneratingPostIndex: null,
 };
 
 function hashHue(seed: string): number {
@@ -107,30 +117,16 @@ function deriveScript(raw: RawEvent): Script | null {
   if (!s) return null;
   const postIndex = Number(raw.payload?.post_index ?? -1);
   if (postIndex < 0) return null;
-  const body = String(s.script ?? "");
-  const hook = String(s.hook ?? "");
-  const author = String((raw.payload?.post as Record<string, unknown> | undefined)?.author ?? "Unknown");
-  const role = String((raw.payload?.post as Record<string, unknown> | undefined)?.role ?? "saved post");
-  const wordCount = body.split(/\s+/).filter(Boolean).length;
-  const dur = Math.max(15, Math.min(60, Math.round(wordCount / 2.5)));
-  const sceneCount = Math.max(3, Math.min(6, body.split(/\n/).filter(Boolean).length || 4));
-  const hashtags = (s.hashtags as string[] | undefined) ?? [];
-  const keywords = (body.match(/\b[A-Z][a-z]+\b/g) ?? []).slice(0, 2);
-  return {
-    id: `script-${postIndex}`,
-    postIndex,
-    title: hook.length > 60 ? hook.slice(0, 58) + "…" : hook,
-    hook: `"${hook}"`,
-    dur,
-    sceneCount,
-    tags: hashtags.slice(0, 4).map((t) => `#${t.replace(/^#/, "")}`),
-    body,
-    author,
-    role,
-    initials: initials(author),
-    h: hashHue(author),
-    keywords,
-  };
+  const postMeta = raw.payload?.post as Record<string, unknown> | undefined;
+  return buildScriptFromApi(postIndex, s, postMeta);
+}
+
+function replaceScriptByPostIndex(state: RunState, script: Script): RunState {
+  const idx = state.scripts.findIndex((s) => s.postIndex === script.postIndex);
+  if (idx < 0) return commitScript(state, script);
+  const scripts = [...state.scripts];
+  scripts[idx] = { ...script, id: scripts[idx]!.id };
+  return { ...state, scripts };
 }
 
 function logFromEvent(raw: RawEvent): LogLine | null {
@@ -153,7 +149,10 @@ function logFromEvent(raw: RawEvent): LogLine | null {
   }
 }
 
-function emptyV2Slice(): Pick<RunState, "comets" | "landed" | "pendingScripts" | "intensity" | "glitch" | "activeScriptId"> {
+function emptyV2Slice(): Pick<
+  RunState,
+  "comets" | "landed" | "pendingScripts" | "intensity" | "glitch" | "activeScriptId" | "regeneratingPostIndex"
+> {
   return {
     comets: [],
     landed: new Set(),
@@ -161,6 +160,7 @@ function emptyV2Slice(): Pick<RunState, "comets" | "landed" | "pendingScripts" |
     intensity: 0,
     glitch: 0,
     activeScriptId: null,
+    regeneratingPostIndex: null,
   };
 }
 
@@ -191,6 +191,23 @@ function reducer(state: RunState, action: Action): RunState {
 
     case "SET_ACTIVE_SCRIPT":
       return { ...state, activeScriptId: action.id };
+
+    case "UPDATE_SCRIPT": {
+      const idx = state.scripts.findIndex((s) => s.id === action.id);
+      if (idx < 0) return state;
+      const updated = applyScriptEdits(state.scripts[idx]!, action.fields);
+      const scripts = [...state.scripts];
+      scripts[idx] = updated;
+      return { ...state, scripts };
+    }
+
+    case "REGENERATE_START":
+      return { ...state, regeneratingPostIndex: action.postIndex };
+
+    case "REGENERATE_END":
+      return state.regeneratingPostIndex === action.postIndex
+        ? { ...state, regeneratingPostIndex: null }
+        : state;
 
     case "EVENT": {
       const { ev } = action;
@@ -239,9 +256,35 @@ function reducer(state: RunState, action: Action): RunState {
           };
         }
 
+        case "content_generating": {
+          if (ev.payload?.regenerate) {
+            const postIndex = Number(ev.payload?.post_index ?? -1);
+            if (postIndex >= 0) {
+              return { ...withLog, regeneratingPostIndex: postIndex };
+            }
+          }
+          return withLog;
+        }
+
+        case "content_error": {
+          if (ev.payload?.regenerate) {
+            const postIndex = Number(ev.payload?.post_index ?? -1);
+            return postIndex >= 0
+              ? { ...withLog, regeneratingPostIndex: null }
+              : withLog;
+          }
+          return withLog;
+        }
+
         case "content_ready": {
           const script = deriveScript(ev);
           if (!script) return withLog;
+          if (ev.payload?.regenerate) {
+            return replaceScriptByPostIndex(
+              { ...withLog, regeneratingPostIndex: null },
+              script,
+            );
+          }
           // If the comet has already landed, commit the script now.
           if (withLog.landed.has(script!.postIndex)) {
             const nextLanded = new Set(withLog.landed);

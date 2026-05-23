@@ -16,15 +16,21 @@ export interface Script {
   postIndex: number;
   title: string;
   hook: string;
+  hookRaw: string;
   dur: number;
   sceneCount: number;
   tags: string[];
+  hashtags: string[];
+  caption: string;
+  cta: string;
+  postUrl: string;
   body: string;
   author: string;
   role: string;
   initials: string;
   h: number;
   keywords: string[];
+  edited?: boolean;
 }
 
 export interface LogLine {

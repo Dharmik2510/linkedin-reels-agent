@@ -32,6 +32,121 @@
   animation: dlgIn 0.22s cubic-bezier(.2,0,.2,1);
 }
 
+.dialogBusy .body,
+.dialogBusy .editBar,
+.dialogBusy .actions {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.regenOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: oklch(0.10 0.006 70 / 0.55);
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.regenSpinner,
+.regenSpinnerSm {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--line-2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.regenSpinnerSm {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.editBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 20px 0;
+  align-items: center;
+}
+
+.editBtn,
+.editBtnSecondary,
+.regenBtn {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.editBtn:disabled,
+.editBtnSecondary:disabled,
+.regenBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.editBtn {
+  border: 1px solid oklch(0.88 0.19 128 / 0.45);
+  background: oklch(0.30 0.04 130 / 0.35);
+  color: var(--accent);
+}
+
+.editBtnSecondary {
+  border: 1px solid var(--line-2);
+  background: var(--bg-3);
+  color: var(--fg-2);
+}
+
+.regenBtn {
+  margin-left: auto;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  color: var(--fg);
+  display: inline-flex;
+  align-items: center;
+}
+
+.regenBtn:hover:not(:disabled) {
+  border-color: oklch(0.75 0.12 250 / 0.45);
+  color: oklch(0.82 0.10 250);
+}
+
+.regenError {
+  margin: 6px 20px 0;
+  font-size: 11px;
+  color: oklch(0.72 0.14 25);
+  font-family: "Geist Mono", monospace;
+}
+
+.editedBadge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: oklch(0.35 0.06 80 / 0.35);
+  color: oklch(0.82 0.10 80);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
 @keyframes dlgIn {
   from { opacity: 0; transform: translateY(8px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -101,12 +216,66 @@
   display: flex;
   gap: 6px;
   align-items: center;
+  flex-wrap: wrap;
   font-family: "Geist Mono", monospace;
   font-size: 11px;
   color: var(--fg-3);
 }
 
 .dur { color: var(--accent); }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 20px 0;
+}
+
+.actionBtn {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid oklch(0.88 0.19 128 / 0.35);
+  background: oklch(0.30 0.04 130 / 0.2);
+  color: var(--accent);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.actionBtn:hover {
+  transform: translateY(-1px);
+  background: oklch(0.30 0.04 130 / 0.35);
+}
+
+.actionBtn:active {
+  transform: translateY(0);
+}
+
+.actionOk {
+  border-color: oklch(0.75 0.14 145 / 0.5);
+  background: oklch(0.32 0.06 145 / 0.25);
+  color: oklch(0.85 0.12 145);
+}
+
+.sourceLink {
+  margin-left: auto;
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  color: var(--fg-3);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.sourceLink:hover {
+  color: var(--accent);
+}
 
 .body {
   padding: 16px 20px 20px;
@@ -179,6 +348,41 @@
   background: var(--bg-3);
   border: 1px solid var(--line-2);
   color: var(--fg-2);
+}
+
+.field {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  font-family: "Geist Mono", monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--fg);
+  resize: vertical;
+  min-height: 48px;
+  transition: border-color 0.15s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: oklch(0.88 0.19 128 / 0.4);
+}
+
+.textareaTall {
+  min-height: 160px;
+}
+
+.textarea:disabled {
+  opacity: 0.7;
 }
 
 @media (max-width: 600px) {

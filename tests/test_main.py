@@ -146,3 +146,79 @@ def test_stop_cancels_running_pipeline():
                 break
             time.sleep(0.05)
         assert main_module._cancelled_marker is True
+
+
+def test_regenerate_returns_404_without_cached_posts():
+    import main as main_module
+    from main import app
+
+    main_module._regenerate_task = None
+    main_module._current_task = None
+    import run_cache
+    run_cache.clear()
+
+    client = TestClient(app)
+    response = client.post("/regenerate/0", json={})
+    assert response.status_code == 404
+    assert response.json()["status"] == "not_found"
+
+
+def test_regenerate_starts_when_posts_cached():
+    import main as main_module
+    from main import app
+    from datetime import datetime, timezone
+    from models import Post
+    import run_cache
+
+    run_cache.set_run(
+        [
+            Post(
+                author="A",
+                text_content="hello",
+                post_url="https://linkedin.com/posts/1",
+                scraped_at=datetime.now(timezone.utc),
+            )
+        ],
+        "Punchy",
+    )
+    main_module._regenerate_task = None
+    main_module._current_task = None
+
+    with patch("main.orchestrator.regenerate", new_callable=AsyncMock) as mock_regen:
+        client = TestClient(app)
+        response = client.post("/regenerate/0", json={"tone": "Analytical"})
+    assert response.status_code == 200
+    assert response.json()["status"] == "started"
+    assert response.json()["post_index"] == 0
+
+
+def test_regenerate_returns_409_when_pipeline_running():
+    import asyncio
+    import main as main_module
+    from main import app
+    from datetime import datetime, timezone
+    from models import Post
+    import run_cache
+
+    run_cache.set_run(
+        [
+            Post(
+                author="A",
+                text_content="hello",
+                post_url="https://linkedin.com/posts/1",
+                scraped_at=datetime.now(timezone.utc),
+            )
+        ],
+        "Punchy",
+    )
+
+    async def slow_run(num_posts, tone="Punchy"):
+        await asyncio.sleep(10)
+
+    with TestClient(app) as client:
+        with patch("main.orchestrator.run", new=slow_run):
+            client.post("/run", json={"num_posts": 1})
+            response = client.post("/regenerate/0", json={})
+        assert response.status_code == 409
+        assert response.json()["status"] == "pipeline_running"
+        client.post("/stop")
