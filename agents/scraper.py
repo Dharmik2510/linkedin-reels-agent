@@ -5,7 +5,7 @@ from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError, a
 
 import config
 from events import push
-from models import Post
+from models import MediaAsset, Post, PostType
 
 LOGIN_URL = "https://www.linkedin.com/login"
 SAVED_POSTS_URL = "https://www.linkedin.com/my-items/saved-posts/"
@@ -246,6 +246,41 @@ async def _scroll_until_n_posts(page: Page, num_posts: int, max_stale: int = 5) 
         await asyncio.sleep(1.5)
 
 
+async def _detect_media(element) -> tuple[PostType, list[MediaAsset], bool]:
+    """Best-effort media detection from saved-post list item."""
+    media: list[MediaAsset] = []
+    post_type: PostType = "text"
+
+    carousel = await element.query_selector(
+        "[data-test-id='carousel'], .artdeco-carousel, button[aria-label*='carousel']"
+    )
+    video = await element.query_selector("video, [data-test-id='video']")
+
+    imgs = await element.query_selector_all(
+        "img[src*='media'], img[src*='licdn.com'], img.feed-images"
+    )
+    for i, img in enumerate(imgs[:6]):
+        src = await img.get_attribute("src")
+        if not src or src.startswith("data:"):
+            continue
+        media.append(MediaAsset(kind="carousel_slide", url=src, slide_index=i))
+
+    if video:
+        post_type = "video"
+        poster = await video.get_attribute("poster")
+        if poster:
+            media.append(MediaAsset(kind="video", url=poster))
+    elif carousel or len(media) > 1:
+        post_type = "carousel"
+    elif len(media) == 1:
+        post_type = "image"
+
+    has_media = post_type != "text" or len(media) > 0
+    if post_type == "text" and has_media:
+        post_type = "mixed"
+    return post_type, media, has_media
+
+
 async def _extract_post(page: Page, element) -> Post | None:
     try:
         # The author's visible name lives in the aria-hidden span inside the
@@ -267,11 +302,16 @@ async def _extract_post(page: Page, element) -> Post | None:
         if post_url and not post_url.startswith("http"):
             post_url = f"https://www.linkedin.com{post_url}"
 
+        post_type, media, has_media = await _detect_media(element)
+
         return Post(
             author=author,
             text_content=text_content,
             post_url=post_url or "",
             scraped_at=datetime.now(timezone.utc),
+            post_type=post_type,
+            media=media,
+            has_media=has_media,
         )
     except Exception:
         return None

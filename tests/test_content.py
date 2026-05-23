@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from models import Post, ReelsScript
+from tests.fixtures import SAMPLE_BRIEF, SAMPLE_UNDERSTANDING
 
 SAMPLE_POST = Post(
     author="Jane Doe",
@@ -23,7 +24,7 @@ SAMPLE_JSON = (
 
 def test_parse_script_plain_json():
     from agents.content import _parse_script
-    result = _parse_script(SAMPLE_JSON)
+    result = _parse_script(SAMPLE_JSON, "en")
     assert result.hook == "AI changed everything I knew"
     assert len(result.hashtags) == 10
 
@@ -31,26 +32,32 @@ def test_parse_script_plain_json():
 def test_parse_script_strips_backtick_fences():
     from agents.content import _parse_script
     fenced = f"```json\n{SAMPLE_JSON}\n```"
-    result = _parse_script(fenced)
+    result = _parse_script(fenced, "en")
     assert result.cta == "Follow for daily AI insights"
 
 
 def test_parse_script_strips_plain_fences():
     from agents.content import _parse_script
     fenced = f"```\n{SAMPLE_JSON}\n```"
-    result = _parse_script(fenced)
+    result = _parse_script(fenced, "en")
     assert result.hook == "AI changed everything I knew"
 
 
 async def test_run_returns_reels_script():
     mock_response = MagicMock()
     mock_response.content = [MagicMock(text=SAMPLE_JSON)]
+    mock_response.usage = MagicMock(input_tokens=100, output_tokens=80)
     mock_client = AsyncMock()
     mock_client.messages.create = AsyncMock(return_value=mock_response)
 
     with patch("agents.content.get_client", return_value=mock_client):
         from agents import content
-        result = await content.run(SAMPLE_POST, 0)
+        result = await content.run(
+            SAMPLE_POST,
+            0,
+            understanding=SAMPLE_UNDERSTANDING,
+            brief=SAMPLE_BRIEF,
+        )
 
     assert isinstance(result, ReelsScript)
     assert result.hook == "AI changed everything I knew"
@@ -65,12 +72,18 @@ async def test_run_handles_fenced_json_from_api():
     fenced = f"```json\n{SAMPLE_JSON}\n```"
     mock_response = MagicMock()
     mock_response.content = [MagicMock(text=fenced)]
+    mock_response.usage = MagicMock(input_tokens=50, output_tokens=50)
     mock_client = AsyncMock()
     mock_client.messages.create = AsyncMock(return_value=mock_response)
 
     with patch("agents.content.get_client", return_value=mock_client):
         from agents import content
-        result = await content.run(SAMPLE_POST, 0)
+        result = await content.run(
+            SAMPLE_POST,
+            0,
+            understanding=SAMPLE_UNDERSTANDING,
+            brief=SAMPLE_BRIEF,
+        )
 
     assert result is not None
     assert result.cta == "Follow for daily AI insights"
@@ -82,7 +95,12 @@ async def test_run_returns_none_on_api_error():
 
     with patch("agents.content.get_client", return_value=mock_client):
         from agents import content
-        result = await content.run(SAMPLE_POST, 0)
+        result = await content.run(
+            SAMPLE_POST,
+            0,
+            understanding=SAMPLE_UNDERSTANDING,
+            brief=SAMPLE_BRIEF,
+        )
 
     assert result is None
 
@@ -92,13 +110,19 @@ async def test_run_emits_generating_event():
 
     mock_response = MagicMock()
     mock_response.content = [MagicMock(text=SAMPLE_JSON)]
+    mock_response.usage = MagicMock(input_tokens=10, output_tokens=10)
     mock_client = AsyncMock()
     mock_client.messages.create = AsyncMock(return_value=mock_response)
 
     async with hub.subscribe() as q:
         with patch("agents.content.get_client", return_value=mock_client):
             from agents import content
-            await content.run(SAMPLE_POST, 2)
+            await content.run(
+                SAMPLE_POST,
+                2,
+                understanding=SAMPLE_UNDERSTANDING,
+                brief=SAMPLE_BRIEF,
+            )
 
         events = []
         while not q.empty():
@@ -118,7 +142,12 @@ async def test_run_emits_error_event_on_failure():
     async with hub.subscribe() as q:
         with patch("agents.content.get_client", return_value=mock_client):
             from agents import content
-            await content.run(SAMPLE_POST, 0)
+            await content.run(
+                SAMPLE_POST,
+                0,
+                understanding=SAMPLE_UNDERSTANDING,
+                brief=SAMPLE_BRIEF,
+            )
 
         events = []
         while not q.empty():
@@ -133,21 +162,30 @@ async def test_run_emits_error_event_on_failure():
 async def test_run_passes_tone_into_system_prompt():
     mock_response = MagicMock()
     mock_response.content = [MagicMock(text=SAMPLE_JSON)]
+    mock_response.usage = MagicMock(input_tokens=10, output_tokens=10)
     mock_client = AsyncMock()
     mock_client.messages.create = AsyncMock(return_value=mock_response)
 
     with patch("agents.content.get_client", return_value=mock_client):
         from agents import content
-        await content.run(SAMPLE_POST, 0, tone="Story-led")
+        await content.run(
+            SAMPLE_POST,
+            0,
+            tone="Story-led",
+            language="hi",
+            understanding=SAMPLE_UNDERSTANDING,
+            brief=SAMPLE_BRIEF,
+        )
 
     call_args = mock_client.messages.create.call_args
     sys_block = call_args.kwargs["system"][0]["text"]
     assert "story-led" in sys_block.lower()
+    assert "Devanagari" in sys_block
 
 
 def test_build_system_prompt_unknown_tone_falls_back_to_punchy():
     from agents.content import build_system_prompt, TONE_GUIDE
-    prompt = build_system_prompt("Whimsical")  # type: ignore[arg-type]
+    prompt = build_system_prompt("Whimsical", "en")  # type: ignore[arg-type]
     assert "Whimsical" not in prompt
-    assert "'Punchy' tone" in prompt
+    assert "Tone: 'Punchy'" in prompt
     assert TONE_GUIDE["Punchy"] in prompt

@@ -1,14 +1,35 @@
-import type { Tone } from "./types";
+import type { Language, Tone } from "./types";
 
-export async function startRun(num_posts: number, tone: Tone): Promise<void> {
+export async function startRun(
+  num_posts: number,
+  tone: Tone,
+  language: Language,
+): Promise<{ runId: string | null }> {
   const res = await fetch("/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ num_posts, tone }),
+    body: JSON.stringify({ num_posts, tone, language }),
   });
   if (!res.ok && res.status !== 409) {
     throw new Error(`Run failed: ${res.status}`);
   }
+  const data = (await res.json().catch(() => ({}))) as { run_id?: string };
+  return { runId: data.run_id ?? null };
+}
+
+export async function submitFeedback(
+  runId: string,
+  stepId: string,
+  rating: "up" | "down",
+  postIndex: number | null,
+  comment?: string,
+): Promise<void> {
+  const q = postIndex !== null ? `?post_index=${postIndex}` : "";
+  await fetch(`/runs/${runId}/steps/${stepId}/feedback${q}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ rating, comment: comment ?? null }),
+  });
 }
 
 export async function stopRun(): Promise<void> {

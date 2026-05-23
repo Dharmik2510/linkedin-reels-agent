@@ -5,7 +5,7 @@ import {
 import { subscribe } from "../api";
 import { usePipelineEngine } from "../hooks/usePipelineEngine";
 import type {
-  Comet, LogLine, Post, RawEvent, Script, Stage, Tone,
+  AgentStep, Comet, Language, LogLine, Post, RawEvent, Script, Stage, Tone,
 } from "../types";
 import {
   applyScriptEdits,
@@ -16,6 +16,10 @@ import {
 interface RunState {
   count: number;
   tone: Tone;
+  language: Language;
+  runId: string | null;
+  runCostUsd: number;
+  agentSteps: AgentStep[];
   stage: Stage;
   posts: Post[];                          // rolling buffer, last 6
   scripts: Script[];                      // visible scripts (gated on comet landing)
@@ -37,6 +41,8 @@ interface RunState {
 export type Action =
   | { type: "SET_COUNT"; n: number }
   | { type: "SET_TONE"; tone: Tone }
+  | { type: "SET_LANGUAGE"; language: Language }
+  | { type: "SET_RUN_ID"; runId: string | null }
   | { type: "RESET" }
   | { type: "EVENT"; ev: RawEvent }
   | { type: "STREAM_ERROR" }
@@ -46,9 +52,33 @@ export type Action =
   | { type: "REGENERATE_START"; postIndex: number }
   | { type: "REGENERATE_END"; postIndex: number };
 
+function agentStepFromEvent(ev: RawEvent): AgentStep | null {
+  if (ev.type !== "agent_step") return null;
+  const p = ev.payload;
+  return {
+    stepId: String(p.step_id ?? ""),
+    runId: p.run_id != null ? String(p.run_id) : null,
+    postIndex: p.post_index != null ? Number(p.post_index) : null,
+    agent: ev.agent,
+    step: String(p.step ?? ""),
+    status: String(p.status ?? "started") as AgentStep["status"],
+    message: ev.message,
+    model: p.model != null ? String(p.model) : null,
+    costUsd: Number(p.cost_usd ?? 0),
+    durationMs: p.duration_ms != null ? Number(p.duration_ms) : null,
+    reasoning: p.reasoning_public != null ? String(p.reasoning_public) : null,
+    outputSummary: p.output_summary != null ? String(p.output_summary) : null,
+    timestamp: ev.timestamp,
+  };
+}
+
 const initial: RunState = {
   count: 10,
   tone: "Punchy",
+  language: "en",
+  runId: null,
+  runCostUsd: 0,
+  agentSteps: [],
   stage: "idle",
   posts: [],
   scripts: [],
@@ -139,6 +169,7 @@ function logFromEvent(raw: RawEvent): LogLine | null {
     case "scraper_scrolling":     return { t, tag: "scroll", level: "info", msg: raw.message };
     case "scraper_done":          return { t, tag: "parse",  level: "ok",   msg: raw.message };
     case "post_scraped":          return { t, tag: "post",   level: "info", msg: raw.message };
+    case "agent_step":            return { t, tag: raw.agent.slice(0, 6), level: "info", msg: raw.message };
     case "content_generating":    return { t, tag: "gen",    level: "info", msg: raw.message };
     case "content_ready":         return { t, tag: "write",  level: "ok",   msg: raw.message };
     case "content_error":         return { t, tag: "gen",    level: "warn", msg: raw.message };
@@ -175,11 +206,16 @@ function reducer(state: RunState, action: Action): RunState {
   switch (action.type) {
     case "SET_COUNT": return { ...state, count: action.n };
     case "SET_TONE":  return { ...state, tone: action.tone };
+    case "SET_LANGUAGE": return { ...state, language: action.language };
+    case "SET_RUN_ID": return { ...state, runId: action.runId };
 
     case "RESET":
       return {
         ...state,
         stage: "idle",
+        runId: null,
+        runCostUsd: 0,
+        agentSteps: [],
         posts: [],
         scripts: [],
         logLines: [],
@@ -212,16 +248,32 @@ function reducer(state: RunState, action: Action): RunState {
     case "EVENT": {
       const { ev } = action;
       const log = logFromEvent(ev);
-      const withLog: RunState = log
+      let withLog: RunState = log
         ? { ...state, logLines: [...state.logLines, log].slice(-200) }
         : state;
+
+      const step = agentStepFromEvent(ev);
+      if (step?.stepId) {
+        const idx = withLog.agentSteps.findIndex((s) => s.stepId === step.stepId);
+        const agentSteps =
+          idx >= 0
+            ? withLog.agentSteps.map((s, i) => (i === idx ? step : s))
+            : [...withLog.agentSteps, step].slice(-120);
+        withLog = { ...withLog, agentSteps };
+      }
 
       switch (ev.type) {
         case "orchestrator_start": {
           const total = Number(ev.payload?.num_posts ?? state.count);
+          const runId = ev.payload?.run_id != null ? String(ev.payload.run_id) : state.runId;
+          const language = (ev.payload?.language as Language) ?? state.language;
           return {
             ...withLog,
             stage: "scraping",
+            runId,
+            language,
+            runCostUsd: 0,
+            agentSteps: [],
             scrapedCount: 0,
             totalPosts: total,
             posts: [],
@@ -297,8 +349,15 @@ function reducer(state: RunState, action: Action): RunState {
           return { ...withLog, pendingScripts: nextPending };
         }
 
-        case "orchestrator_complete":
-          return { ...withLog, stage: "done", glitch: state.glitch + 1 };
+        case "orchestrator_complete": {
+          const cost = Number(ev.payload?.cost_usd ?? withLog.runCostUsd);
+          return {
+            ...withLog,
+            stage: "done",
+            runCostUsd: cost,
+            glitch: state.glitch + 1,
+          };
+        }
 
         default:
           return withLog;

@@ -2,9 +2,10 @@
   display: flex;
   align-items: center;
   gap: 18px;
-  padding-bottom: 18px;
+  padding-bottom: clamp(12px, 1.2vh, 18px);
   border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .brand {

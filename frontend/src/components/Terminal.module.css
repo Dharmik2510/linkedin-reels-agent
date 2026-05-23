@@ -4,7 +4,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 180px;
+  height: 100%;
+  min-height: 0;
 }
 
 .head {
@@ -110,8 +111,14 @@
 
 @keyframes blink { 50% { opacity: 0; } }
 
-@media (max-width: 1240px) {
+@media (max-width: 1024px) {
   .body { columns: 1; column-rule: 0; }
+}
+
+@media (max-width: 720px) {
+  .panel {
+    height: clamp(120px, 22vh, 180px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

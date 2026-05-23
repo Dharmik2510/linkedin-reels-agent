@@ -4,6 +4,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .head {
@@ -38,8 +39,8 @@
 
 .body {
   position: relative;
-  height: 540px;
-  flex: 0 0 540px;
+  flex: 1 1 auto;
+  min-height: clamp(320px, 48vh, 720px);
   overflow: hidden;
 }
 
@@ -124,8 +125,8 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 340px;
-  height: 220px;
+  width: clamp(260px, 32%, 400px);
+  height: clamp(160px, 38%, 260px);
   z-index: 3;
 }
 
@@ -245,13 +246,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 200px;
+  width: clamp(120px, 16%, 200px);
   perspective: 800px;
   z-index: 2;
 }
 
-.body :global(.stack-col.left)  { left: 20px; }
-.body :global(.stack-col.right) { right: 20px; }
+.body :global(.stack-col.left)  { left: clamp(8px, 1.5vw, 20px); }
+.body :global(.stack-col.right) { right: clamp(8px, 1.5vw, 20px); }
 
 .body :global(.stack-label) {
   position: absolute;
@@ -291,8 +292,8 @@
 
 .body :global(.stack) {
   position: relative;
-  width: 150px;
-  height: 200px;
+  width: clamp(110px, 90%, 150px);
+  height: clamp(140px, 85%, 200px);
   transform-style: preserve-3d;
   transform: rotateY(-15deg) rotateX(8deg);
 }

@@ -1,27 +1,15 @@
-import asyncio
-from datetime import datetime, timezone
+from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 import pytest
 
-from models import Post, ReelsScript
+from tests.fixtures import SAMPLE_BRIEF, SAMPLE_POSTS, SAMPLE_SCRIPT, SAMPLE_UNDERSTANDING
 
-SAMPLE_POSTS = [
-    Post(
-        author=f"Author {i}",
-        text_content=f"Content {i}",
-        post_url=f"https://linkedin.com/posts/{i}",
-        scraped_at=datetime.now(timezone.utc),
-    )
-    for i in range(3)
-]
 
-SAMPLE_SCRIPT = ReelsScript(
-    hook="Test hook here now",
-    script="Test spoken script content",
-    caption="Test caption #test",
-    hashtags=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
-    cta="Follow me right now",
-)
+def _apply_orchestrator_patches(stack: ExitStack):
+    stack.enter_context(patch("orchestrator.scraper.run", AsyncMock(return_value=SAMPLE_POSTS)))
+    stack.enter_context(patch("orchestrator.intent.run", AsyncMock(return_value=SAMPLE_UNDERSTANDING)))
+    stack.enter_context(patch("orchestrator.strategist.run", AsyncMock(return_value=SAMPLE_BRIEF)))
+    stack.enter_context(patch("orchestrator.content.run", AsyncMock(return_value=SAMPLE_SCRIPT)))
 
 
 async def test_run_emits_start_event():
@@ -30,13 +18,11 @@ async def test_run_emits_start_event():
     async def capture(event: dict) -> None:
         emitted.append(event)
 
-    with (
-        patch("orchestrator.push", capture),
-        patch("orchestrator.scraper.run", AsyncMock(return_value=SAMPLE_POSTS)),
-        patch("orchestrator.content.run", AsyncMock(return_value=SAMPLE_SCRIPT)),
-    ):
+    with ExitStack() as stack:
+        stack.enter_context(patch("orchestrator.push", capture))
+        _apply_orchestrator_patches(stack)
         import orchestrator
-        await orchestrator.run(3)
+        await orchestrator.run(3, run_id="test-run-1")
 
     types = [e["type"] for e in emitted]
     assert "orchestrator_start" in types
@@ -48,13 +34,11 @@ async def test_run_emits_complete_event_with_stats():
     async def capture(event: dict) -> None:
         emitted.append(event)
 
-    with (
-        patch("orchestrator.push", capture),
-        patch("orchestrator.scraper.run", AsyncMock(return_value=SAMPLE_POSTS)),
-        patch("orchestrator.content.run", AsyncMock(return_value=SAMPLE_SCRIPT)),
-    ):
+    with ExitStack() as stack:
+        stack.enter_context(patch("orchestrator.push", capture))
+        _apply_orchestrator_patches(stack)
         import orchestrator
-        await orchestrator.run(3)
+        await orchestrator.run(3, run_id="test-run-2")
 
     complete = next(e for e in emitted if e["type"] == "orchestrator_complete")
     assert complete["payload"]["posts_scraped"] == 3
@@ -71,10 +55,12 @@ async def test_run_counts_none_returns_as_errors():
     with (
         patch("orchestrator.push", capture),
         patch("orchestrator.scraper.run", AsyncMock(return_value=SAMPLE_POSTS)),
+        patch("orchestrator.intent.run", AsyncMock(return_value=SAMPLE_UNDERSTANDING)),
+        patch("orchestrator.strategist.run", AsyncMock(return_value=SAMPLE_BRIEF)),
         patch("orchestrator.content.run", AsyncMock(return_value=None)),
     ):
         import orchestrator
-        await orchestrator.run(3)
+        await orchestrator.run(3, run_id="test-run-3")
 
     complete = next(e for e in emitted if e["type"] == "orchestrator_complete")
     assert complete["payload"]["errors"] == 3
@@ -96,10 +82,12 @@ async def test_run_continues_after_partial_failure():
     with (
         patch("orchestrator.push", capture),
         patch("orchestrator.scraper.run", AsyncMock(return_value=SAMPLE_POSTS)),
+        patch("orchestrator.intent.run", AsyncMock(return_value=SAMPLE_UNDERSTANDING)),
+        patch("orchestrator.strategist.run", AsyncMock(return_value=SAMPLE_BRIEF)),
         patch("orchestrator.content.run", sometimes_fail),
     ):
         import orchestrator
-        await orchestrator.run(3)
+        await orchestrator.run(3, run_id="test-run-4")
 
     assert call_count == 3
     complete = next(e for e in emitted if e["type"] == "orchestrator_complete")
@@ -121,7 +109,7 @@ async def test_run_emits_error_event_when_scraper_fails():
         patch("orchestrator.scraper.run", fail),
     ):
         import orchestrator
-        await orchestrator.run(3)  # must not raise
+        await orchestrator.run(3, run_id="test-run-5")
 
     types = [e["type"] for e in emitted]
     assert "orchestrator_start" in types
@@ -138,10 +126,12 @@ async def test_run_counts_raised_exceptions_as_errors():
     with (
         patch("orchestrator.push", capture),
         patch("orchestrator.scraper.run", AsyncMock(return_value=SAMPLE_POSTS)),
+        patch("orchestrator.intent.run", AsyncMock(return_value=SAMPLE_UNDERSTANDING)),
+        patch("orchestrator.strategist.run", AsyncMock(return_value=SAMPLE_BRIEF)),
         patch("orchestrator.content.run", AsyncMock(side_effect=RuntimeError("unexpected"))),
     ):
         import orchestrator
-        await orchestrator.run(3)
+        await orchestrator.run(3, run_id="test-run-6")
 
     complete = next(e for e in emitted if e["type"] == "orchestrator_complete")
     assert complete["payload"]["errors"] == 3
@@ -150,32 +140,34 @@ async def test_run_counts_raised_exceptions_as_errors():
 
 @pytest.mark.asyncio
 async def test_run_emits_stage_changed_events(monkeypatch):
-    from datetime import datetime, timezone  # noqa: F401
     from agents import content, scraper
-    import orchestrator, events as events_mod
-
-    fake_post = type("P", (), {
-        "model_dump": lambda self, **k: {"author": "A", "text_content": "x", "post_url": "", "scraped_at": "t"},
-        "text_content": "x",
-        "author": "A",
-    })()
+    import orchestrator
+    import events as events_mod
+    from tests.fixtures import SAMPLE_POST
 
     async def fake_scrape(n):
-        return [fake_post for _ in range(n)]
+        return [SAMPLE_POST for _ in range(n)]
 
-    async def fake_content(post, idx, tone="Punchy"):
+    async def fake_intent(post, idx, **kwargs):
+        return SAMPLE_UNDERSTANDING
+
+    async def fake_strategist(post, u, idx, **kwargs):
+        return SAMPLE_BRIEF
+
+    async def fake_content(post, idx, **kwargs):
         return None
 
     monkeypatch.setattr(scraper, "run", fake_scrape)
+    monkeypatch.setattr(orchestrator.intent, "run", fake_intent)
+    monkeypatch.setattr(orchestrator.strategist, "run", fake_strategist)
     monkeypatch.setattr(content, "run", fake_content)
 
     seen_stages: list[str] = []
     async with events_mod.hub.subscribe() as q:
-        await orchestrator.run(2, tone="Punchy")
-        # Drain any events emitted during the run
+        await orchestrator.run(2, tone="Punchy", run_id="test-run-7")
         while not q.empty():
             ev = q.get_nowait()
             if ev.get("type") == "stage_changed":
                 seen_stages.append(ev["payload"]["stage"])
 
-    assert seen_stages == ["scraping", "generating", "done"]
+    assert seen_stages == ["scraping", "analyzing", "generating", "done"]

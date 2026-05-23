@@ -1,6 +1,13 @@
 export type Tone = "Punchy" | "Story-led" | "Analytical" | "Educational";
+export type Language = "en" | "gu" | "hi";
 
-export type Stage = "idle" | "scraping" | "parsing" | "generating" | "done";
+export type Stage =
+  | "idle"
+  | "scraping"
+  | "analyzing"
+  | "parsing"
+  | "generating"
+  | "done";
 
 export interface Post {
   id: string;
@@ -40,16 +47,31 @@ export interface LogLine {
   msg: string;
 }
 
+export interface AgentStep {
+  stepId: string;
+  runId: string | null;
+  postIndex: number | null;
+  agent: string;
+  step: string;
+  status: "started" | "completed" | "failed";
+  message: string;
+  model: string | null;
+  costUsd: number;
+  durationMs: number | null;
+  reasoning: string | null;
+  outputSummary: string | null;
+  timestamp: string;
+}
+
 export interface Comet {
   id: number;
   postIndex: number;
-  t: number;          // 0..1 along the path
-  born: number;       // performance.now() at spawn
-  label: string;      // e.g. "MO"
-  hue: number;        // 0..360
+  t: number;
+  born: number;
+  label: string;
+  hue: number;
 }
 
-// Raw backend event shape (unchanged from v1).
 export interface RawEvent {
   type: string;
   agent: string;

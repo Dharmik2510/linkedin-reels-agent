@@ -21,7 +21,7 @@ For frontend development with hot reload, run `cd frontend && npm run dev` in a 
 
 1. Open http://localhost:8000 in your browser
 2. Pick the number of posts from the dropdown and choose a tone (Punchy, Story-led, Analytical, Educational)
-3. Click **Run pipeline** — the status pill goes live and the pipeline animates as posts are scraped and reels are generated
+3. Choose **language** (English, Gujarati, Hindi), tone, and post count, then click **Run pipeline** — agents scrape → analyze intent → plan → write scripts (watch the **Agent trace** panel)
 4. Generated reel scripts appear in the right-hand "Reel scripts" panel; Playwright agent logs stream into the terminal below
 5. Click **Stop run** during a run to cancel cleanly
 

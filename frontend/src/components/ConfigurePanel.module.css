@@ -3,6 +3,11 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
   padding: 18px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .title {
@@ -107,7 +112,8 @@
 .toneChip:disabled { cursor: not-allowed; opacity: 0.6; }
 
 .runBtn {
-  margin-top: 14px;
+  margin-top: auto;
+  padding-top: 14px;
   width: 100%;
   padding: 12px 14px;
   border: 0;

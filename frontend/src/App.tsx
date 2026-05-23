@@ -5,6 +5,7 @@ import PipelinePanel from "./components/PipelinePanel";
 import ScriptsPanel from "./components/ScriptsPanel";
 import ScriptModal from "./components/ScriptModal";
 import Terminal from "./components/Terminal";
+import AgentTrace from "./components/AgentTrace";
 import Dust from "./components/Dust";
 
 export default function App() {
@@ -17,7 +18,8 @@ export default function App() {
         <PipelinePanel />
         <ScriptsPanel />
       </div>
-      <div className={styles.termStrip}>
+      <div className={styles.bottomRow}>
+        <AgentTrace />
         <Terminal />
       </div>
       <ScriptModal />

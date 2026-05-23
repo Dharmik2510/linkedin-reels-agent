@@ -1,0 +1,124 @@
+.panel {
+  composes: panel from "../styles/app.module.css";
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  font-family: "Geist Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+.cost {
+  color: var(--accent);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 10px;
+}
+
+.body::-webkit-scrollbar { width: 6px; }
+.body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+
+.idle {
+  margin: 12px 8px;
+  font-size: 12px;
+  color: var(--fg-3);
+}
+
+.row {
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: var(--bg-3);
+  font-size: 11px;
+}
+
+.row.completed {
+  border-color: oklch(0.88 0.19 128 / 0.25);
+}
+
+.row.failed {
+  border-color: oklch(0.70 0.18 25 / 0.4);
+}
+
+.rowTop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-family: "Geist Mono", monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-3);
+}
+
+.agent {
+  color: var(--accent);
+}
+
+.post {
+  color: var(--fg-2);
+}
+
+.status {
+  margin-left: auto;
+}
+
+.dur {
+  color: var(--fg-3);
+}
+
+.msg {
+  margin: 6px 0 0;
+  color: var(--fg);
+  line-height: 1.4;
+}
+
+.out {
+  margin: 4px 0 0;
+  color: var(--fg-2);
+}
+
+.reason {
+  margin: 4px 0 0;
+  color: var(--fg-3);
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.fb {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+}
+
+.fbBtn {
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.fbBtn:hover {
+  border-color: var(--accent);
+}

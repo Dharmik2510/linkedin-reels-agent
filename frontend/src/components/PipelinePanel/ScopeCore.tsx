@@ -7,6 +7,7 @@ import { fmtElapsed } from "../../utils/text";
 const STAGE_LABELS: Record<Stage, { big: string; sub: string }> = {
   idle:       { big: "STANDBY", sub: "agent ready · idle" },
   scraping:   { big: "SCRAPE",  sub: "playwright · /saved-posts" },
+  analyzing:  { big: "ANALYZE", sub: "intent · media metadata" },
   parsing:    { big: "PARSE",   sub: "dedup · embed · rank" },
   generating: { big: "REELIFY", sub: "drafting reel scripts" },
   done:       { big: "READY",   sub: "pipeline complete" },

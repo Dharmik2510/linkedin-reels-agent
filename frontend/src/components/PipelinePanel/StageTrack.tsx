@@ -2,14 +2,15 @@ import type { Stage } from "../../types";
 
 const ITEMS: { k: string; label: string }[] = [
   { k: "scrape", label: "01 · Scrape" },
-  { k: "parse",  label: "02 · Parse" },
-  { k: "gen",    label: "03 · Generate" },
-  { k: "ready",  label: "04 · Ready" },
+  { k: "analyze", label: "02 · Analyze" },
+  { k: "gen", label: "03 · Generate" },
+  { k: "ready", label: "04 · Ready" },
 ];
 
 const STAGE_IDX: Record<Stage, number> = {
   idle: -1,
   scraping: 0,
+  analyzing: 1,
   parsing: 1,
   generating: 2,
   done: 3,

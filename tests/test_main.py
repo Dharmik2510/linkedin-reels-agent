@@ -29,11 +29,13 @@ def test_run_returns_started_status():
     client = TestClient(app)
     mock_run = AsyncMock()
     with patch("main.orchestrator.run", mock_run):
-        response = client.post("/run", json={"num_posts": 3})
+        response = client.post("/run", json={"num_posts": 3, "language": "gu"})
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "started"
     assert data["num_posts"] == 3
+    assert data["language"] == "gu"
+    assert "run_id" in data
 
 
 def test_run_default_num_posts():
@@ -56,7 +58,7 @@ def test_run_returns_409_when_already_running():
     import asyncio
     import main as main_module
 
-    async def slow_run(num_posts, tone="Punchy"):
+    async def slow_run(num_posts, tone="Punchy", language="en", run_id=None):
         await asyncio.sleep(10)
 
     from main import app
@@ -120,7 +122,7 @@ def test_stop_cancels_running_pipeline():
     import asyncio
     import main as main_module
 
-    async def slow_run(num_posts, tone="Punchy"):
+    async def slow_run(num_posts, tone="Punchy", language="en", run_id=None):
         try:
             await asyncio.sleep(5)
         except asyncio.CancelledError:
@@ -212,7 +214,7 @@ def test_regenerate_returns_409_when_pipeline_running():
         "Punchy",
     )
 
-    async def slow_run(num_posts, tone="Punchy"):
+    async def slow_run(num_posts, tone="Punchy", language="en", run_id=None):
         await asyncio.sleep(10)
 
     with TestClient(app) as client:

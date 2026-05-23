@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { startRun, stopRun } from "../api";
 import { useStore } from "../state/store";
-import type { Tone } from "../types";
+import type { Language, Tone } from "../types";
 import { Bookmark, Spark } from "../icons";
 import Dropdown, { type DropdownOption } from "./Dropdown";
 import styles from "./ConfigurePanel.module.css";
@@ -16,12 +16,22 @@ const POST_COUNT_OPTIONS: DropdownOption[] = [
 ];
 
 const TONES: Tone[] = ["Punchy", "Story-led", "Analytical", "Educational"];
+const LANGUAGES: { code: Language; label: string }[] = [
+  { code: "en", label: "English" },
+  { code: "gu", label: "Gujarati" },
+  { code: "hi", label: "Hindi" },
+];
 
 export default function ConfigurePanel() {
   const { state, dispatch } = useStore();
   const view = useMemo(
-    () => ({ count: state.count, tone: state.tone, stage: state.stage }),
-    [state.count, state.tone, state.stage],
+    () => ({
+      count: state.count,
+      tone: state.tone,
+      language: state.language,
+      stage: state.stage,
+    }),
+    [state.count, state.tone, state.language, state.stage],
   );
   const running = view.stage !== "idle" && view.stage !== "done";
 
@@ -31,7 +41,8 @@ export default function ConfigurePanel() {
       dispatch({ type: "RESET" });
     } else {
       dispatch({ type: "RESET" });
-      await startRun(view.count, view.tone);
+      const { runId } = await startRun(view.count, view.tone, view.language);
+      if (runId) dispatch({ type: "SET_RUN_ID", runId });
     }
   };
 
@@ -59,6 +70,21 @@ export default function ConfigurePanel() {
         disabled={running}
         onChange={(n) => dispatch({ type: "SET_COUNT", n })}
       />
+
+      <div className={styles.sectionLabel}>// script language</div>
+      <div className={styles.toneGrid}>
+        {LANGUAGES.map(({ code, label }) => (
+          <button
+            key={code}
+            type="button"
+            disabled={running}
+            className={`${styles.toneChip} ${view.language === code ? styles.selected : ""}`}
+            onClick={() => dispatch({ type: "SET_LANGUAGE", language: code })}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className={styles.sectionLabel}>// reel tone</div>
       <div className={styles.toneGrid}>

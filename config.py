@@ -14,3 +14,5 @@ def _get_required(key: str) -> str:
 ANTHROPIC_API_KEY: str = _get_required("ANTHROPIC_API_KEY")
 LINKEDIN_EMAIL: str = _get_required("LINKEDIN_EMAIL")
 LINKEDIN_PASSWORD: str = _get_required("LINKEDIN_PASSWORD")
+
+MAX_RUN_BUDGET_USD: float = float(os.getenv("REELIFY_MAX_RUN_BUDGET_USD", "2.0"))
